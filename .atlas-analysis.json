@@ -1,0 +1,105 @@
+{
+  "projectType": "cli-tool",
+  "projectName": "Loom LDAP Browser",
+  "projectDescription": "A feature-rich terminal-based LDAP directory browser with vim-style navigation and comprehensive directory management capabilities.",
+  "theme": "aspen",
+  "primaryColor": "#3b82f6",
+  "lightColor": "#60a5fa",
+  "darkColor": "#2563eb",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "User Guide",
+            "pages": [
+              "guide/connecting",
+              "guide/browsing",
+              "guide/searching",
+              "guide/editing-entries",
+              "guide/profiles",
+              "guide/authentication"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/export-import",
+              "features/schema-viewer",
+              "features/bulk-operations",
+              "features/themes",
+              "features/context-menus"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Reference",
+        "groups": [
+          {
+            "group": "Configuration",
+            "pages": [
+              "reference/configuration",
+              "reference/keybindings",
+              "reference/credentials",
+              "reference/tls-modes",
+              "reference/command-line"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/architecture",
+              "advanced/offline-mode",
+              "advanced/development"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Tree browser with vim-style navigation",
+    "Multi-tab LDAP connections",
+    "LDAP filter search with live results",
+    "Inline attribute editing with DN search",
+    "Create, delete, and bulk-update entries",
+    "Export/import in LDIF, JSON, CSV, XLSX",
+    "Schema viewer for object classes and attributes",
+    "Connection profiles with folder organization",
+    "Multiple credential methods (prompt, command, keychain)",
+    "TLS support with auto-negotiation",
+    "Server detection (OpenLDAP, Active Directory)",
+    "5 built-in themes with custom theme support",
+    "Mouse support and context menus",
+    "Offline demo mode"
+  ],
+  "publicApiSurface": [
+    "loom-ldapbrowser [OPTIONS]",
+    "-H, --host <HOST> - LDAP host to connect to",
+    "-p, --port <PORT> - LDAP port",
+    "-D, --bind-dn <DN> - Bind DN",
+    "-b, --base-dn <DN> - Base DN",
+    "-c, --config <PATH> - Path to config file",
+    "--vault-password <PASSWORD> - Vault master password",
+    "--vault <PATH> - Path to vault file",
+    "F1 - Switch to profiles layout",
+    "F2 - Open connection dialog",
+    "F4 - Export dialog",
+    "F5 / ? - Help overlay",
+    "F6 - Schema viewer",
+    "F7 - Toggle log panel",
+    "F8 - Bulk update dialog",
+    "F9 / / - Search with LDAP filter",
+    "F10 - Save connection profile"
+  ]
+}

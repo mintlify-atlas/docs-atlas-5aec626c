@@ -1,0 +1,391 @@
+---
+title: "Browsing the Directory Tree"
+description: "Navigate LDAP directory entries with vim-style keybindings and intuitive panel layouts"
+---
+
+Once connected, Loom's browser layout provides a powerful interface for exploring your LDAP directory.
+
+## Browser Layout Overview
+
+The browser layout consists of four main areas:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ [Tab Bar] - Connection tabs                            │
+├──────────────────┬──────────────────────────────────────┤
+│ Tree Panel       │ Detail Panel                         │
+│                  │                                      │
+│ Directory        │ Attributes of                        │
+│ hierarchy        │ selected entry                       │
+│                  │                                      │
+├──────────────────┴──────────────────────────────────────┤
+│ Command Panel - Search input                            │
+├─────────────────────────────────────────────────────────┤
+│ Status Bar - Connection info and hints                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+<Note>
+Press `Tab` to move focus between panels. The focused panel is highlighted with a brighter border.
+</Note>
+
+## Tab Bar
+
+The tab bar displays all open connection tabs:
+
+- Each tab represents an independent LDAP connection
+- The active tab is highlighted
+- Tab names show the connection profile name or hostname
+
+### Tab Navigation
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+Right` / `gt` | Next tab |
+| `Ctrl+Left` / `gT` | Previous tab |
+| `Ctrl+W` | Close current tab |
+
+<Tip>
+You can have multiple connections open simultaneously, making it easy to compare entries across different servers.
+</Tip>
+
+## Tree Panel
+
+The tree panel shows the LDAP directory hierarchy starting from your configured base DN.
+
+### Navigation Keybindings
+
+<Tabs>
+  <Tab title="Vim Style">
+    | Key | Action |
+    |-----|--------|
+    | `j` | Move down one entry |
+    | `k` | Move up one entry |
+    | `l` / `Enter` | Expand node or enter |
+    | `h` | Collapse node |
+    | `g` | Jump to top |
+    | `G` | Jump to bottom |
+  </Tab>
+
+  <Tab title="Arrow Keys">
+    | Key | Action |
+    |-----|--------|
+    | `↓` | Move down one entry |
+    | `↑` | Move up one entry |
+    | `→` / `Enter` | Expand node or enter |
+    | `←` | Collapse node |
+    | `Home` | Jump to top |
+    | `End` | Jump to bottom |
+  </Tab>
+</Tabs>
+
+### Lazy Loading
+
+The tree loads children **lazily** - entries are only fetched when you expand a node:
+
+- Collapsed nodes show `[+]` if they have children
+- Expanded nodes show `[-]` and display their children
+- Each expansion triggers an LDAP search for immediate children
+
+<Info>
+This lazy loading approach keeps the interface responsive even with large directories containing thousands of entries.
+</Info>
+
+### Tree Operations
+
+| Key | Action |
+|-----|--------|
+| `a` | Create child entry under selected node |
+| `d` / `Delete` | Delete selected entry (with confirmation) |
+| `Space` | Open context menu |
+| `r` | Refresh node children |
+
+<Warning>
+Deletion requires confirmation. The entry must have no children (LDAP servers reject deletion of non-leaf entries).
+</Warning>
+
+## Detail Panel
+
+The detail panel displays all attributes and values of the currently selected entry.
+
+### Panel Layout
+
+```
+dn: cn=Alice,ou=users,dc=example,dc=com
+
+objectClass:
+  • inetOrgPerson
+  • posixAccount
+  • top
+
+cn: Alice
+
+sn: Smith
+
+mail:
+  • alice@example.com
+  • a.smith@example.com
+
+uid: alice
+
+uidNumber: 1001
+
+gidNumber: 1001
+
+homeDirectory: /home/alice
+```
+
+### Navigation
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` / `↓` / `↑` | Navigate attributes |
+| `PageDown` / `PageUp` | Jump 10 attributes |
+| `g` / `Home` | Jump to top |
+| `G` / `End` | Jump to bottom |
+
+### Attribute Operations
+
+| Key | Action |
+|-----|--------|
+| `e` / `Enter` | Edit selected attribute value |
+| `a` | Add new attribute to entry |
+| `+` | Add value to multi-valued attribute |
+| `d` / `Delete` | Delete attribute value (with confirmation) |
+| `Space` | Open context menu |
+
+### Entry Operations
+
+| Key | Action |
+|-----|--------|
+| `n` | Create new child entry |
+| `x` | Delete this entry |
+| `r` | Refresh entry from server |
+
+<Tip>
+Multi-valued attributes (like `objectClass` or `mail`) show all values as a bulleted list. Each value can be edited or deleted independently.
+</Tip>
+
+## Command Panel
+
+The command panel at the bottom provides a search input field:
+
+- Press `F9` or `/` to focus the search input
+- Type an LDAP filter and press `Enter` to search
+- Results appear in a popup overlay
+
+See [Searching](/guide/searching) for detailed information about LDAP filters.
+
+## Status Bar
+
+The status bar displays:
+
+- **Connection info:** Profile name or hostname
+- **Server type:** Detected vendor (OpenLDAP, Active Directory, etc.)
+- **Key hints:** Quick reference for common operations
+- **Messages:** Status messages and operation results
+
+<Note>
+Server type is auto-detected from the root DSE attributes. Detection may show "Unknown" for some servers without affecting functionality.
+</Note>
+
+## Working with Entries
+
+<Steps>
+  <Step title="Select an Entry">
+    Navigate to an entry in the tree panel using `j`/`k` or arrow keys.
+    
+    The detail panel automatically updates to show the selected entry's attributes.
+  </Step>
+
+  <Step title="View Attributes">
+    Move focus to the detail panel by pressing `Tab`.
+    
+    Scroll through attributes using `j`/`k` to see all properties of the entry.
+  </Step>
+
+  <Step title="Expand the Tree">
+    Press `l` or `Enter` on a collapsed node to load its children.
+    
+    Children are fetched from the server with a single LDAP search operation.
+
+    <Info>
+    The first expansion may take a moment for large containers with hundreds of children.
+    </Info>
+  </Step>
+
+  <Step title="Collapse the Tree">
+    Press `h` or `←` to collapse an expanded node.
+    
+    This hides children without removing them from memory - re-expanding is instant.
+  </Step>
+</Steps>
+
+## Context Menus
+
+Press `Space` on any tree node or detail attribute to open a context menu with available actions:
+
+### Tree Context Menu
+
+- **Connect** (on profile) - Open connection
+- **Edit** - View/edit connection details  
+- **Create child** - Add new entry under this node
+- **Delete** - Remove entry
+- **Refresh** - Reload children from server
+- **Copy DN** - Copy distinguished name to clipboard
+
+### Detail Context Menu
+
+- **Edit value** - Modify attribute value
+- **Add value** - Add to multi-valued attribute
+- **Delete value** - Remove attribute value
+- **Copy value** - Copy to clipboard
+- **Copy attribute name** - Copy attribute name to clipboard
+
+<Tip>
+Context menus also work with mouse right-click if you prefer using a mouse.
+</Tip>
+
+## Panel Focus
+
+The focused panel is indicated by a highlighted border:
+
+- Press `Tab` to move focus forward (Tree → Detail → Command)
+- Press `Shift+Tab` to move focus backward
+- Many keybindings are context-sensitive based on focus
+
+<Note>
+Some global keybindings (like `F1`-`F10`) work regardless of which panel has focus.
+</Note>
+
+## Display Features
+
+### Entry Icons
+
+The tree panel shows visual indicators:
+
+- `[+]` - Collapsed node with children
+- `[-]` - Expanded node
+- `📁` - Organizational unit
+- `👤` - Person entry
+- `🔧` - Configuration entry
+
+<Info>
+Icons are determined by the entry's `objectClass` attribute.
+</Info>
+
+### Syntax Highlighting
+
+The detail panel applies syntax highlighting:
+
+- **Attribute names** - Bold
+- **String values** - Normal text
+- **DN values** - Blue (clickable in DN search mode)
+- **Numbers** - Cyan
+- **Multi-values** - Bulleted list
+
+### Entry Count
+
+Expanded nodes show the number of children in parentheses:
+
+```
+[-] ou=users (42)
+    [+] cn=Alice
+    [+] cn=Bob
+    ...
+```
+
+## Performance Tips
+
+<AccordionGroup>
+  <Accordion title="Large directories">
+    For directories with thousands of entries:
+    
+    - Use search filters instead of expanding large containers
+    - Increase `page_size` in your connection profile (default: 500)
+    - Consider setting a more specific `base_dn` to limit scope
+  </Accordion>
+
+  <Accordion title="Slow server responses">
+    If entries load slowly:
+    
+    - Check network latency to the LDAP server
+    - Increase `timeout_secs` if searches time out
+    - Use more specific base DNs to reduce search scope
+    - Consider if server-side indexing can be improved
+  </Accordion>
+
+  <Accordion title="Memory usage">
+    Loom keeps expanded nodes in memory:
+    
+    - Collapse unused branches to free memory
+    - Close tabs for connections you're not using
+    - Restart the application if memory usage becomes excessive
+  </Accordion>
+</AccordionGroup>
+
+## Keyboard Reference
+
+### Global Navigation
+
+| Key | Action |
+|-----|--------|
+| `F1` | Switch to profiles layout |
+| `F2` | Open connection dialog |
+| `F4` | Export dialog |
+| `F5` / `?` | Show help overlay |
+| `F6` | Schema viewer |
+| `F7` | Toggle log panel |
+| `F8` | Bulk update dialog |
+| `F9` / `/` | Focus search input |
+| `F10` | Save current connection |
+| `Tab` | Focus next panel |
+| `Shift+Tab` | Focus previous panel |
+| `Ctrl+Q` | Quit application |
+
+### Tree Panel
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` / `↓` / `↑` | Navigate |
+| `l` / `→` / `Enter` | Expand/select |
+| `h` / `←` | Collapse |
+| `g` / `G` | Jump top/bottom |
+| `a` | Create child |
+| `d` / `Delete` | Delete entry |
+| `Space` | Context menu |
+
+### Detail Panel
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` / `↓` / `↑` | Navigate |
+| `e` / `Enter` | Edit value |
+| `a` | Add attribute |
+| `+` | Add value |
+| `d` / `Delete` | Delete value |
+| `n` | Create child entry |
+| `x` | Delete entry |
+| `r` | Refresh |
+| `Space` | Context menu |
+
+<Tip>
+Press `F5` or `?` at any time to view the built-in help overlay with all keybindings.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Searching" icon="magnifying-glass" href="/guide/searching">
+    Search the directory with LDAP filters
+  </Card>
+  <Card title="Editing Entries" icon="pen-to-square" href="/guide/editing-entries">
+    Modify attributes and create new entries
+  </Card>
+  <Card title="Connection Profiles" icon="bookmark" href="/guide/profiles">
+    Manage saved connections and folders
+  </Card>
+  <Card title="Connecting" icon="plug" href="/guide/connecting">
+    Learn about connection methods
+  </Card>
+</CardGroup>

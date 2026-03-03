@@ -1,0 +1,614 @@
+---
+title: 'Development Guide'
+description: 'Build, test, and contribute to Loom LDAP Browser'
+---
+
+## Prerequisites
+
+Before you begin development, ensure you have the required tools installed:
+
+<CardGroup cols={2}>
+  <Card title="Rust 1.80+" icon="rust">
+    The minimum supported Rust version. Check with `rustc --version`.
+
+    ```bash
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+    ```
+  </Card>
+  <Card title="Git" icon="git">
+    Version control for cloning the repository and managing contributions.
+
+    ```bash
+    git --version
+    ```
+  </Card>
+  <Card title="Cargo" icon="box">
+    Rust's build system and package manager (included with Rust installation).
+
+    ```bash
+    cargo --version
+    ```
+  </Card>
+  <Card title="Terminal" icon="terminal">
+    A modern terminal emulator with Unicode and 256-color support for testing the TUI.
+  </Card>
+</CardGroup>
+
+---
+
+## Getting Started
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/trepidity/loom-ldapbrowser.git
+    cd loom-ldapbrowser
+    ```
+  </Step>
+
+  <Step title="Build the workspace">
+    ```bash
+    cargo build --workspace
+    ```
+
+    This compiles all three crates:
+    - `loom-ldapbrowser` (binary)
+    - `loom-core` (library)
+    - `loom-tui` (library)
+  </Step>
+
+  <Step title="Run the application">
+    ```bash
+    cargo run --bin loom-ldapbrowser
+    ```
+
+    Use offline mode for testing without an LDAP server (see [Offline Mode](/advanced/offline-mode)).
+  </Step>
+
+  <Step title="Run tests">
+    ```bash
+    cargo test --workspace
+    ```
+
+    This executes unit tests across all crates.
+  </Step>
+</Steps>
+
+---
+
+## Development Workflow
+
+### Building
+
+<CodeGroup>
+```bash Check all crates
+cargo check --workspace
+```
+
+```bash Build debug (faster)
+cargo build --workspace
+```
+
+```bash Build release (optimized)
+cargo build --workspace --release
+```
+
+```bash Build specific crate
+cargo build -p loom-core
+```
+</CodeGroup>
+
+<Info>
+  Use `cargo check` during development for fast syntax checking without generating binaries.
+</Info>
+
+### Testing
+
+<CodeGroup>
+```bash Run all tests
+cargo test --workspace
+```
+
+```bash Test specific crate
+cargo test -p loom-core
+```
+
+```bash Test specific module
+cargo test -p loom-core schema
+```
+
+```bash Show test output
+cargo test --workspace -- --nocapture
+```
+</CodeGroup>
+
+### Linting and Formatting
+
+<CodeGroup>
+```bash Run Clippy (linter)
+cargo clippy --workspace -- -D warnings
+```
+
+```bash Format code
+cargo fmt --all
+```
+
+```bash Check formatting
+cargo fmt --all -- --check
+```
+</CodeGroup>
+
+<Warning>
+  **Always run `cargo fmt --all` before committing!** This is mentioned in `CLAUDE.md` and ensures consistent code style.
+</Warning>
+
+---
+
+## Workspace Structure
+
+The project is organized as a Cargo workspace. See [Architecture Overview](/advanced/architecture) for detailed crate responsibilities.
+
+```
+loom-ldapbrowser/
+├── Cargo.toml              # Workspace configuration
+├── crates/
+│   ├── loom-ldapbrowser/   # Binary crate
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       └── main.rs     # Entry point
+│   ├── loom-core/          # Core LDAP library
+│   │   ├── Cargo.toml
+│   │   └── src/
+│   │       ├── lib.rs
+│   │       ├── connection.rs
+│   │       ├── schema.rs
+│   │       ├── offline.rs
+│   │       └── ...
+│   └── loom-tui/           # TUI library
+│       ├── Cargo.toml
+│       └── src/
+│           ├── lib.rs
+│           ├── app.rs      # Main state machine
+│           ├── action.rs   # Action dispatch
+│           └── components/ # UI components
+├── README.md
+├── USER_MANUAL.md
+├── CLAUDE.md               # Development workflow notes
+└── LICENSE.txt
+```
+
+---
+
+## Common Development Tasks
+
+### Adding a New Action
+
+Actions are the central message type for state changes. See [Architecture: Action Dispatch](/advanced/architecture#action-dispatch-pattern).
+
+<Steps>
+  <Step title="Add action variant">
+    Edit `crates/loom-tui/src/action.rs`:
+
+    ```rust
+    pub enum Action {
+        // ... existing variants
+        MyNewAction(String),  // Add your action
+    }
+    ```
+  </Step>
+
+  <Step title="Handle action in App">
+    Edit `crates/loom-tui/src/app.rs` in the `App::update()` method:
+
+    ```rust
+    match action {
+        // ... existing handlers
+        Action::MyNewAction(data) => {
+            // Update state or spawn async task
+            self.my_state = data;
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Dispatch action from component">
+    In your component's event handler:
+
+    ```rust
+    impl MyComponent {
+        fn handle_key(&mut self, key: KeyEvent) -> Vec<Action> {
+            match key.code {
+                KeyCode::Char('a') => vec![Action::MyNewAction("hello".to_string())],
+                _ => vec![],
+            }
+        }
+    }
+    ```
+  </Step>
+</Steps>
+
+### Adding a New UI Component
+
+<Steps>
+  <Step title="Create component file">
+    ```bash
+    touch crates/loom-tui/src/components/my_component.rs
+    ```
+  </Step>
+
+  <Step title="Implement Component trait">
+    ```rust
+    use ratatui::prelude::*;
+    use crate::action::Action;
+    use crate::component::Component;
+
+    pub struct MyComponent {
+        // Component state
+    }
+
+    impl Component for MyComponent {
+        fn handle_key_event(&mut self, key: KeyEvent) -> Vec<Action> {
+            // Handle keyboard input
+            vec![]
+        }
+
+        fn render(&mut self, f: &mut Frame, area: Rect) {
+            // Render the component
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Register in mod.rs">
+    Edit `crates/loom-tui/src/components/mod.rs`:
+
+    ```rust
+    pub mod my_component;
+    pub use my_component::MyComponent;
+    ```
+  </Step>
+
+  <Step title="Add to App state">
+    Edit `crates/loom-tui/src/app.rs`:
+
+    ```rust
+    pub struct App {
+        // ... existing fields
+        pub my_component: MyComponent,
+    }
+    ```
+  </Step>
+</Steps>
+
+### Adding a New LDAP Operation
+
+<Steps>
+  <Step title="Add method to loom-core">
+    Edit `crates/loom-core/src/connection.rs`:
+
+    ```rust
+    impl LdapConnection {
+        pub async fn my_operation(&self, param: &str) -> Result<String> {
+            // Use self.ldap to perform LDAP operations
+            let result = self.ldap.simple_search(...).await?;
+            Ok(result)
+        }
+    }
+    ```
+  </Step>
+
+  <Step title="Create action for the operation">
+    Add to `action.rs` and handle in `app.rs` as shown above.
+  </Step>
+
+  <Step title="Spawn async task from UI">
+    In your component or app update handler:
+
+    ```rust
+    let conn = self.current_connection().clone();
+    let tx = self.action_tx.clone();
+    tokio::spawn(async move {
+        let result = conn.my_operation("param").await?;
+        tx.send(Action::MyOperationComplete(result)).await?;
+    });
+    ```
+  </Step>
+</Steps>
+
+---
+
+## Testing
+
+### Unit Tests
+
+Add tests in the same file as your implementation:
+
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_my_function() {
+        let result = my_function("input");
+        assert_eq!(result, "expected");
+    }
+
+    #[tokio::test]
+    async fn test_async_function() {
+        let result = async_function().await.unwrap();
+        assert!(result.len() > 0);
+    }
+}
+```
+
+### Integration Tests
+
+For testing with a real LDAP server, use the offline mode in tests:
+
+```rust
+use loom_core::offline::OfflineConnection;
+
+#[tokio::test]
+async fn test_search_operation() {
+    let conn = OfflineConnection::new("dc=example,dc=org".to_string());
+    let results = conn.search("dc=example,dc=org", "(objectClass=*)").await.unwrap();
+    assert!(results.len() > 0);
+}
+```
+
+### Manual Testing
+
+For TUI components, manual testing in a terminal is essential:
+
+<CodeGroup>
+```bash Test with offline mode
+cargo run -- --config /dev/null
+# Then press F2 and create an offline connection
+```
+
+```bash Test with custom config
+cargo run -- --config ./test-config.toml
+```
+
+```bash Test specific connection
+cargo run -- -H localhost -b "dc=example,dc=org"
+```
+</CodeGroup>
+
+---
+
+## Debugging
+
+### Logging
+
+Loom LDAP Browser uses `tracing` for structured logging. Enable debug logs:
+
+```bash
+RUST_LOG=debug cargo run
+```
+
+Log levels:
+- `RUST_LOG=error` - Errors only
+- `RUST_LOG=warn` - Warnings and errors
+- `RUST_LOG=info` - Info, warnings, errors (default)
+- `RUST_LOG=debug` - All debug messages
+- `RUST_LOG=trace` - Very verbose, includes LDAP protocol details
+
+### Log Panel
+
+While running the application, press `F7` to toggle the log panel and see real-time logs.
+
+### Debugging Actions
+
+Add logging in the action handler to trace state changes:
+
+```rust
+match action {
+    Action::MyAction(data) => {
+        tracing::debug!("MyAction received: {}", data);
+        // ... handle action
+    }
+}
+```
+
+---
+
+## Contributing
+
+### Commit Guidelines
+
+Follow **conventional commit** format as specified in `CLAUDE.md`:
+
+```
+type(scope): subject
+
+Body (optional)
+```
+
+**Types:**
+- `feat` - New feature
+- `fix` - Bug fix
+- `docs` - Documentation changes
+- `style` - Code style changes (formatting, etc.)
+- `refactor` - Code refactoring
+- `test` - Adding or updating tests
+- `chore` - Maintenance tasks
+
+**Examples:**
+
+```bash
+git commit -m "feat(search): add fuzzy search in DN picker"
+git commit -m "fix(tls): handle certificate verification errors"
+git commit -m "docs(readme): update installation instructions"
+```
+
+### Pre-commit Checklist
+
+<Steps>
+  <Step title="Format code">
+    ```bash
+    cargo fmt --all
+    ```
+
+    <Warning>
+      This is **mandatory** per `CLAUDE.md`. Commits without formatting will be rejected.
+    </Warning>
+  </Step>
+
+  <Step title="Run linter">
+    ```bash
+    cargo clippy --workspace -- -D warnings
+    ```
+
+    Fix all warnings before committing.
+  </Step>
+
+  <Step title="Run tests">
+    ```bash
+    cargo test --workspace
+    ```
+
+    Ensure all tests pass.
+  </Step>
+
+  <Step title="Commit changes">
+    ```bash
+    git add .
+    git commit -m "feat(component): add my feature"
+    ```
+  </Step>
+</Steps>
+
+### Pull Request Guidelines
+
+1. **Fork the repository** on GitHub
+2. **Create a feature branch** from `main`:
+   ```bash
+   git checkout -b feat/my-feature
+   ```
+3. **Make your changes** following the guidelines above
+4. **Push to your fork**:
+   ```bash
+   git push origin feat/my-feature
+   ```
+5. **Open a Pull Request** with:
+   - Clear description of changes
+   - Reference to any related issues
+   - Screenshots for UI changes
+   - Test results
+
+---
+
+## Project Dependencies
+
+Key external dependencies used across the workspace:
+
+### Core Dependencies
+
+| Crate | Purpose | Documentation |
+|-------|---------|---------------|
+| `tokio` | Async runtime | [docs.rs](https://docs.rs/tokio) |
+| `ldap3` | LDAP protocol | [docs.rs](https://docs.rs/ldap3) |
+| `ratatui` | TUI framework | [ratatui.rs](https://ratatui.rs) |
+| `crossterm` | Terminal backend | [docs.rs](https://docs.rs/crossterm) |
+| `serde` | Serialization | [serde.rs](https://serde.rs) |
+
+### UI Components
+
+| Crate | Purpose |
+|-------|----------|
+| `tui-tree-widget` | Tree view component |
+| `tui-textarea` | Multi-line text input |
+| `tui-logger` | Log panel integration |
+| `nucleo` | Fuzzy search |
+
+### Data Handling
+
+| Crate | Purpose |
+|-------|----------|
+| `toml` | Config file parsing |
+| `csv` | CSV export/import |
+| `rust_xlsxwriter` | XLSX export |
+| `calamine` | XLSX import |
+| `keyring` | OS keychain access |
+
+---
+
+## Building Documentation
+
+The project includes comprehensive documentation:
+
+- **User Manual**: `USER_MANUAL.md` - Complete user guide
+- **README**: `README.md` - Quick start and overview
+- **API Docs**: Generate with `cargo doc`
+
+```bash
+# Generate and open API documentation
+cargo doc --workspace --open --no-deps
+```
+
+This builds rustdoc documentation for all crates and opens it in your browser.
+
+---
+
+## Release Process
+
+<Note>
+  For maintainers only. Release process may vary based on project governance.
+</Note>
+
+<Steps>
+  <Step title="Update version">
+    Edit `Cargo.toml` in the workspace root:
+
+    ```toml
+    [workspace.package]
+    version = "0.2.0"
+    ```
+  </Step>
+
+  <Step title="Update CHANGELOG">
+    Document changes since the last release.
+  </Step>
+
+  <Step title="Create release commit">
+    ```bash
+    cargo fmt --all
+    git commit -am "chore: release v0.2.0"
+    git tag v0.2.0
+    ```
+  </Step>
+
+  <Step title="Build release binaries">
+    ```bash
+    cargo build --workspace --release
+    ```
+
+    Binaries are in `target/release/`.
+  </Step>
+
+  <Step title="Push tag">
+    ```bash
+    git push origin main --tags
+    ```
+
+    This typically triggers CI/CD to build and publish binaries.
+  </Step>
+</Steps>
+
+---
+
+## Getting Help
+
+If you encounter issues during development:
+
+1. **Check the User Manual**: `USER_MANUAL.md` has detailed feature documentation
+2. **Review CLAUDE.md**: Contains development workflow notes
+3. **Browse existing code**: The codebase is well-structured and documented
+4. **Open an issue**: [GitHub Issues](https://github.com/trepidity/loom-ldapbrowser/issues)
+5. **Read the source**: Code comments and module docs explain implementation details
+
+<Info>
+  The `loom-core` and `loom-tui` crates are libraries that can be explored independently. Use `cargo doc` to generate detailed API documentation.
+</Info>

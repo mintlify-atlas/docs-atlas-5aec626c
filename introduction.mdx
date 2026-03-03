@@ -1,0 +1,124 @@
+---
+title: Introduction
+description: A terminal-based LDAP browser built with Rust for browsing, searching, editing, and managing LDAP directories
+---
+
+# Loom LDAP Browser
+
+A powerful terminal-based LDAP browser built with Rust. Browse, search, edit, and manage LDAP directories from the comfort of your terminal with vim-style navigation and a full-featured TUI.
+
+## Key features
+
+<CardGroup cols={2}>
+  <Card title="Tree browser" icon="folder-tree">
+    Navigate your LDAP directory with vim-style navigation (h/j/k/l) and lazy-loading for efficient browsing of large directories
+  </Card>
+  
+  <Card title="Attribute editing" icon="pen-to-square">
+    View and edit attributes inline with DN search mode for relationship attributes like member and manager
+  </Card>
+  
+  <Card title="Multi-tab connections" icon="table-columns">
+    Open multiple simultaneous LDAP connections in separate tabs and switch between them seamlessly
+  </Card>
+  
+  <Card title="Advanced search" icon="magnifying-glass">
+    Search with full LDAP filter syntax and navigate directly to matching entries from results
+  </Card>
+  
+  <Card title="Bulk operations" icon="layer-group">
+    Create, delete, and bulk-update entries with filter-based modifications across multiple entries
+  </Card>
+  
+  <Card title="Export & import" icon="file-export">
+    Export and import directory data in LDIF, JSON, CSV, and XLSX formats
+  </Card>
+  
+  <Card title="Schema viewer" icon="diagram-project">
+    Explore object classes and attribute types with full inheritance resolution and syntax details
+  </Card>
+  
+  <Card title="Connection profiles" icon="address-book">
+    Save and organize connection profiles with folder hierarchy for easy management
+  </Card>
+  
+  <Card title="Flexible credentials" icon="key">
+    Support for interactive prompts, shell commands (pass, 1Password), and OS keychain integration
+  </Card>
+  
+  <Card title="TLS security" icon="shield-halved">
+    Auto-negotiation, LDAPS, StartTLS, or plaintext with flexible TLS mode configuration
+  </Card>
+  
+  <Card title="Server detection" icon="server">
+    Automatic detection and optimization for OpenLDAP, Active Directory, and other LDAP servers
+  </Card>
+  
+  <Card title="Customizable themes" icon="palette">
+    Five built-in themes (dark, light, solarized, nord, matrix) with support for custom themes
+  </Card>
+</CardGroup>
+
+## What is LDAP?
+
+LDAP (Lightweight Directory Access Protocol) is an industry-standard protocol for accessing and maintaining distributed directory information services. It's commonly used for:
+
+- **User authentication and authorization** - Centralized user management for applications and systems
+- **Organizational data** - Storing hierarchical information about people, groups, and resources
+- **Configuration management** - Network services, email routing, and application settings
+- **Address books** - Contact information and organizational structures
+
+## Why Loom LDAP Browser?
+
+<Note>
+  While web-based and GUI LDAP browsers exist, Loom LDAP Browser is designed for system administrators and developers who live in the terminal and want a fast, keyboard-driven workflow.
+</Note>
+
+**Terminal-native experience**
+
+Stay in your terminal with vim-style navigation, keyboard shortcuts, and a responsive TUI that doesn't require a desktop environment or web browser.
+
+**Fast and lightweight**
+
+Built with Rust for minimal resource usage and instant startup. Navigate large directories with lazy-loading that only fetches what you need.
+
+**Developer-friendly**
+
+Full support for advanced LDAP operations, schema inspection, bulk updates, and multiple export formats. Read-only mode prevents accidental modifications in production.
+
+**Flexible authentication**
+
+Integrate with your existing credential management tools like `pass`, 1Password CLI, or use OS keychain storage. Environment variables and interactive prompts are also supported.
+
+## Supported platforms
+
+Loom LDAP Browser runs on:
+
+- **Linux** - x86_64, aarch64
+- **macOS** - Intel (x86_64), Apple Silicon (aarch64)
+- **Windows** - x86_64
+
+## Server compatibility
+
+Works with any LDAP-compliant server:
+
+- OpenLDAP
+- Active Directory
+- 389 Directory Server
+- Apache Directory Server
+- Oracle Directory Server
+- And more
+
+## Open source
+
+Loom LDAP Browser is licensed under the [GNU General Public License v3.0](https://github.com/trepidity/loom-ldapbrowser/blob/main/LICENSE.txt).
+
+## Get started
+
+<Card title="Installation" icon="download" href="/installation">
+  Install Loom LDAP Browser from source or download prebuilt binaries
+</Card>
+
+<Card title="Quick start" icon="rocket" href="/quickstart">
+  Connect to your first LDAP server and start browsing in minutes
+</Card>

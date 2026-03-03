@@ -1,0 +1,556 @@
+---
+title: "Authentication Methods"
+description: "Configure password storage and credential handling with prompt, command, keychain, and vault methods"
+---
+
+Loom supports multiple authentication methods to securely manage LDAP bind credentials.
+
+## Credential Methods Overview
+
+Choose the method that best fits your security requirements:
+
+| Method | Description | Best For |
+|--------|-------------|----------|
+| **Prompt** | Interactive password entry | Ad-hoc connections, development |
+| **Command** | Execute shell command for password | Integration with password managers |
+| **Keychain** | OS-native credential storage | Convenience with system security |
+| **Vault** | Loom's encrypted vault | Portable encrypted storage |
+
+<Info>
+The credential method is configured per connection profile. Different profiles can use different methods.
+</Info>
+
+## Prompt Method
+
+The simplest method - Loom asks for the password when needed.
+
+### Configuration
+
+```toml
+[[connections]]
+name = "My Server"
+host = "ldap.example.com"
+bind_dn = "cn=admin,dc=example,dc=com"
+credential_method = "prompt"
+```
+
+### Behavior
+
+<Tabs>
+  <Tab title="Startup Connection">
+    If connecting on startup, you'll see a terminal password prompt:
+
+    ```
+    Password for cn=admin,dc=example,dc=com: _
+    ```
+
+    Type the password (hidden) and press `Enter`.
+  </Tab>
+
+  <Tab title="In-TUI Connection">
+    If opening a connection after startup, a password dialog appears in the TUI:
+
+    ```
+    ┌─ Enter Password ─────────────────────┐
+    │                                      │
+    │ Bind DN: cn=admin,dc=example,dc=com  │
+    │                                      │
+    │ Password: **********                 │
+    │                                      │
+    │ [Enter] Connect  [Esc] Cancel        │
+    └──────────────────────────────────────┘
+    ```
+  </Tab>
+</Tabs>
+
+### Environment Variable
+
+Skip the prompt by setting `LOOM_PASSWORD`:
+
+```bash
+export LOOM_PASSWORD="your-password"
+loom-ldapbrowser
+```
+
+<Warning>
+Environment variables are visible to other processes and may be logged. Only use this for testing or in secure environments.
+</Warning>
+
+## Command Method
+
+Execute a shell command to retrieve the password. Works with any password manager or script.
+
+### Configuration
+
+```toml
+[[connections]]
+name = "Production"
+host = "ldap.example.com"
+bind_dn = "cn=admin,dc=example,dc=com"
+credential_method = "command"
+password_command = "pass show ldap/prod"
+```
+
+### How It Works
+
+1. Loom executes `password_command` via `sh -c`
+2. Reads the password from stdout
+3. Trims trailing newlines
+4. Uses the password for LDAP bind
+
+<Note>
+The command must print **only** the password to stdout. Prompts, warnings, or extra output will cause authentication to fail.
+</Note>
+
+## Password Manager Examples
+
+<Tabs>
+  <Tab title="pass (password-store)">
+    [pass](https://www.passwordstore.org/) - the standard Unix password manager:
+
+    ```toml
+    credential_method = "command"
+    password_command = "pass show ldap/production"
+    ```
+
+    Retrieves the password from `~/.password-store/ldap/production.gpg`.
+
+    <Tip>
+    Store the password with:
+    ```bash
+    pass insert ldap/production
+    ```
+    </Tip>
+  </Tab>
+
+  <Tab title="1Password CLI">
+    [1Password CLI](https://developer.1password.com/docs/cli/):
+
+    ```toml
+    credential_method = "command"
+    password_command = "op read 'op://Vault/LDAP Production/password'"
+    ```
+
+    Replace `Vault` and `LDAP Production` with your vault and item names.
+
+    <Info>
+    Requires 1Password CLI (`op`) to be installed and authenticated.
+    </Info>
+  </Tab>
+
+  <Tab title="Bitwarden CLI">
+    [Bitwarden CLI](https://bitwarden.com/help/cli/):
+
+    ```toml
+    credential_method = "command"
+    password_command = "bw get password 'LDAP Production'"
+    ```
+
+    <Note>
+    Session must be unlocked. Set `BW_SESSION` environment variable or use `bw unlock`.
+    </Note>
+  </Tab>
+
+  <Tab title="GPG Encrypted File">
+    Decrypt a GPG-encrypted password file:
+
+    ```toml
+    credential_method = "command"
+    password_command = "gpg --quiet --decrypt ~/.ldap-password.gpg"
+    ```
+
+    Create the encrypted file:
+    ```bash
+    echo -n "your-password" | gpg --encrypt --recipient your@email.com > ~/.ldap-password.gpg
+    ```
+  </Tab>
+
+  <Tab title="macOS Keychain CLI">
+    Retrieve from macOS Keychain using `security`:
+
+    ```toml
+    credential_method = "command"
+    password_command = "security find-generic-password -w -s 'LDAP Production' -a 'admin'"
+    ```
+
+    Store the password:
+    ```bash
+    security add-generic-password -s "LDAP Production" -a "admin" -w "your-password"
+    ```
+
+    <Tip>
+    Consider using the native "keychain" method instead for better integration.
+    </Tip>
+  </Tab>
+
+  <Tab title="Custom Script">
+    Any script that outputs a password:
+
+    ```toml
+    credential_method = "command"
+    password_command = "/home/user/bin/get-ldap-password.sh production"
+    ```
+
+    Example script:
+    ```bash
+    #!/bin/bash
+    # get-ldap-password.sh
+    environment="$1"
+    # Your custom logic here
+    echo -n "retrieved-password"
+    ```
+
+    Make it executable:
+    ```bash
+    chmod +x /home/user/bin/get-ldap-password.sh
+    ```
+  </Tab>
+</Tabs>
+
+## Keychain Method
+
+Uses your operating system's native credential storage.
+
+### Configuration
+
+```toml
+[[connections]]
+name = "Production"
+host = "ldap.example.com"
+bind_dn = "cn=admin,dc=example,dc=com"
+credential_method = "keychain"
+```
+
+### Platform Support
+
+<Tabs>
+  <Tab title="macOS">
+    **Keychain Access**
+
+    Passwords are stored in macOS Keychain with:
+    - **Service:** `loom`
+    - **Account:** Connection profile name (e.g., `Production`)
+
+    View/edit stored passwords:
+    1. Open **Keychain Access** app
+    2. Search for `loom`
+    3. Double-click the entry to view/edit
+  </Tab>
+
+  <Tab title="Linux">
+    **Secret Service (GNOME Keyring, KWallet)**
+
+    Requires a Secret Service provider:
+    - GNOME: `gnome-keyring`
+    - KDE: `kwallet`
+    - Others: `keepassxc` (with Secret Service enabled)
+
+    <Note>
+    If no Secret Service is available, keychain method will fail. Use "command" or "prompt" instead.
+    </Note>
+  </Tab>
+
+  <Tab title="Windows">
+    **Windows Credential Manager**
+
+    Passwords are stored in Windows Credential Manager with:
+    - **Target:** `loom/[profile-name]`
+    - **Username:** Bind DN
+
+    View/edit stored passwords:
+    1. Open **Control Panel** → **Credential Manager**
+    2. Click **Windows Credentials**
+    3. Find entries starting with `loom/`
+  </Tab>
+</Tabs>
+
+### Storing Passwords
+
+On first connection with keychain method:
+
+1. Loom prompts for the password
+2. After successful authentication, asks: "Save password to keychain?"
+3. If you confirm, the password is stored
+4. Future connections retrieve it automatically
+
+<Tip>
+To update a stored password, delete the keychain entry manually and reconnect. Loom will prompt for the new password.
+</Tip>
+
+## Vault Method
+
+Loom's built-in encrypted vault for portable, secure storage.
+
+### Configuration
+
+Enable vault in general settings:
+
+```toml
+[general]
+vault_enabled = true
+
+[[connections]]
+name = "Production"
+host = "ldap.example.com"
+bind_dn = "cn=admin,dc=example,dc=com"
+credential_method = "vault"
+```
+
+### Vault Setup
+
+<Steps>
+  <Step title="Enable Vault">
+    Add to your `config.toml`:
+
+    ```toml
+    [general]
+    vault_enabled = true
+    ```
+  </Step>
+
+  <Step title="First Launch">
+    On first launch with vault enabled, you'll be prompted to create a master password:
+
+    ```
+    Create vault master password: _
+    Confirm master password: _
+    ```
+
+    <Warning>
+    **Store this password safely!** There is no password recovery. If forgotten, you'll lose access to all vault credentials.
+    </Warning>
+  </Step>
+
+  <Step title="Store Credentials">
+    When connecting to a profile with `credential_method = "vault"`:
+
+    1. Loom prompts for the bind password
+    2. After successful bind, asks: "Store in vault?"
+    3. Password is encrypted and stored
+  </Step>
+
+  <Step title="Future Connections">
+    On subsequent launches:
+
+    1. Loom prompts for vault master password (once per session)
+    2. All vault credentials are decrypted and available
+  </Step>
+</Steps>
+
+### Vault Location
+
+- **Linux/macOS:** `~/.config/loom-ldapbrowser/vault.dat`
+- **Windows:** `%APPDATA%\loom-ldapbrowser\vault.dat`
+
+<Info>
+The vault file is encrypted with AES-256. Backup this file to preserve your stored credentials.
+</Info>
+
+### Command-Line Options
+
+```bash
+# Use custom vault location
+loom-ldapbrowser --vault /path/to/vault.dat
+
+# Provide master password via CLI (not recommended)
+loom-ldapbrowser --vault-password "master-password"
+
+# Provide via environment variable
+export LOOM_VAULT_PASSWORD="master-password"
+loom-ldapbrowser
+```
+
+## Anonymous Bind
+
+Connect without authentication by leaving `bind_dn` empty:
+
+```toml
+[[connections]]
+name = "Public Server"
+host = "ldap.example.com"
+base_dn = "dc=example,dc=com"
+# bind_dn is omitted
+```
+
+<Note>
+Anonymous access is often restricted. You may only see public entries or have limited search capabilities.
+</Note>
+
+## Security Best Practices
+
+<AccordionGroup>
+  <Accordion title="Choose the right method">
+    **Production servers:**
+    - ✅ Use "keychain" or "vault" for persistent storage
+    - ✅ Use "command" with a password manager
+    - ❌ Avoid "prompt" with `LOOM_PASSWORD` env var
+
+    **Development/testing:**
+    - ✅ Use "prompt" for temporary access
+    - ✅ Use "command" if you have a password manager setup
+  </Accordion>
+
+  <Accordion title="Protect master passwords">
+    **Vault master password:**
+    - Choose a strong, unique password
+    - Store in your personal password manager
+    - Never share or commit to version control
+    - There is no recovery mechanism
+
+    **Password manager:**
+    - Use your password manager's security features
+    - Enable MFA/2FA if available
+    - Keep the password manager locked when not in use
+  </Accordion>
+
+  <Accordion title="Don't commit credentials">
+    When sharing `config.toml`:
+
+    ✅ **Do:**
+    ```toml
+    credential_method = "prompt"  # Forces user to provide password
+    ```
+
+    ❌ **Don't:**
+    ```toml
+    password = "plaintext-password"  # Never store passwords in config!
+    ```
+
+    <Warning>
+    Loom does not support storing passwords in `config.toml`. Use credential methods instead.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Use read-only accounts when possible">
+    For browsing/auditing:
+
+    ```toml
+    bind_dn = "cn=readonly,dc=example,dc=com"
+    read_only = true
+    ```
+
+    Limits damage if credentials are compromised.
+  </Accordion>
+
+  <Accordion title="Rotate credentials regularly">
+    Periodically update LDAP bind passwords:
+
+    1. Change the password on the LDAP server
+    2. Update stored credentials:
+       - **Keychain:** Delete entry, reconnect to store new password
+       - **Vault:** Reconnect, Loom will prompt and update
+       - **Command:** Update the password in your password manager
+  </Accordion>
+</AccordionGroup>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Keychain access denied">
+    **macOS:**
+    - Open Keychain Access
+    - Search for `loom`
+    - Click "Access Control" tab
+    - Add `loom-ldapbrowser` to allowed applications
+
+    **Linux:**
+    - Ensure a Secret Service provider is running:
+      ```bash
+      ps aux | grep -E "gnome-keyring|kwallet"
+      ```
+    - Install if missing:
+      ```bash
+      # GNOME
+      sudo apt install gnome-keyring
+      
+      # KDE
+      sudo apt install kwalletmanager
+      ```
+
+    **Windows:**
+    - Run Loom with administrator privileges once to grant access
+    - Check Windows Defender isn't blocking credential access
+  </Accordion>
+
+  <Accordion title="Password command fails">
+    If command method returns an error:
+
+    1. **Test the command manually:**
+       ```bash
+       sh -c "pass show ldap/prod"
+       ```
+       Ensure it prints only the password
+
+    2. **Check command output:**
+       - No prompts or interactive input
+       - No extra text or formatting
+       - Command exits with status 0
+
+    3. **Check PATH:**
+       The command must be in Loom's PATH. Use full paths if needed:
+       ```toml
+       password_command = "/usr/local/bin/pass show ldap/prod"
+       ```
+  </Accordion>
+
+  <Accordion title="Vault password forgotten">
+    Unfortunately, there is no password recovery for the vault.
+
+    **Options:**
+    1. Delete `vault.dat` and start fresh (loses all stored passwords)
+    2. Restore from backup if available
+    3. Switch affected profiles to a different credential method
+
+    <Warning>
+    Vault encryption is intentionally unrecoverable without the master password.
+    </Warning>
+  </Accordion>
+
+  <Accordion title="Bind fails with stored credentials">
+    If authentication fails despite stored credentials:
+
+    1. **Verify password is correct:**
+       - Delete stored credential
+       - Reconnect with prompt method
+       - Re-store if successful
+
+    2. **Check bind DN format:**
+       - OpenLDAP: `cn=admin,dc=example,dc=com`
+       - Active Directory: `admin@example.com` or `DOMAIN\admin`
+
+    3. **Check server logs:**
+       - Look for bind failures
+       - Verify account isn't locked
+  </Accordion>
+</AccordionGroup>
+
+## Method Comparison
+
+| Feature | Prompt | Command | Keychain | Vault |
+|---------|--------|---------|----------|---------|
+| **Security** | Medium | High* | High | High |
+| **Convenience** | Low | High | High | High |
+| **Portability** | High | Medium | Low | Medium |
+| **Setup Complexity** | None | Medium | Low | Low |
+| **Cross-platform** | Yes | Yes | Yes** | Yes |
+| **Backup/Sync** | N/A | External | System | Manual |
+
+\* Depends on password manager security  
+\** Requires platform-specific credential store
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Connection Profiles" icon="bookmark" href="/guide/profiles">
+    Configure profiles with credential methods
+  </Card>
+  <Card title="Connecting" icon="plug" href="/guide/connecting">
+    Connect to LDAP servers
+  </Card>
+  <Card title="Configuration" icon="gear" href="/reference/configuration">
+    Complete configuration reference
+  </Card>
+  <Card title="TLS Modes" icon="shield" href="/reference/tls-modes">
+    TLS connection modes and security
+  </Card>
+</CardGroup>

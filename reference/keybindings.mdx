@@ -1,0 +1,270 @@
+---
+title: Keybindings Reference
+description: Complete keyboard shortcut reference for Loom LDAP Browser including global, panel-specific, and dialog keybindings
+---
+
+Loom LDAP Browser uses vim-style navigation by default, with support for arrow keys and function keys. Most global keybindings are configurable via the `[keybindings]` section in `config.toml`.
+
+## Configurable Global Keybindings
+
+These keybindings can be customized in the `[keybindings]` section of your configuration file.
+
+```toml
+[keybindings]
+quit = "Ctrl+q"
+force_quit = "Ctrl+c"
+focus_next = "Tab"
+focus_prev = "Shift+Tab"
+show_connect_dialog = "F2"
+search = "F9"
+show_export_dialog = "F4"
+show_bulk_update = "F8"
+show_schema_viewer = "F6"
+show_help = "F5"
+toggle_log_panel = "F7"
+save_connection = "F10"
+switch_to_profiles = "F1"
+next_tab = "Ctrl+Right"
+prev_tab = "Ctrl+Left"
+close_tab = "Ctrl+w"
+```
+
+<ParamField path="quit" type="string" default="Ctrl+q">
+  Quit the application (with confirmation if there are unsaved changes).
+</ParamField>
+
+<ParamField path="force_quit" type="string" default="Ctrl+c">
+  Force quit immediately without confirmation.
+</ParamField>
+
+<ParamField path="focus_next" type="string" default="Tab">
+  Move focus to the next panel.
+</ParamField>
+
+<ParamField path="focus_prev" type="string" default="Shift+Tab">
+  Move focus to the previous panel.
+</ParamField>
+
+<ParamField path="show_connect_dialog" type="string" default="F2">
+  Open the connection dialog to create a new connection or select from saved profiles.
+</ParamField>
+
+<ParamField path="search" type="string" default="F9">
+  Focus the search input bar to enter an LDAP filter query.
+</ParamField>
+
+<ParamField path="show_export_dialog" type="string" default="F4">
+  Open the export dialog to export entries to LDIF, JSON, CSV, or XLSX.
+</ParamField>
+
+<ParamField path="show_bulk_update" type="string" default="F8">
+  Open the bulk update dialog to modify multiple entries matching a filter.
+</ParamField>
+
+<ParamField path="show_schema_viewer" type="string" default="F6">
+  Open the schema viewer to browse object classes and attribute types.
+</ParamField>
+
+<ParamField path="show_help" type="string" default="F5">
+  Show the help overlay with keyboard shortcuts and tips.
+</ParamField>
+
+<ParamField path="toggle_log_panel" type="string" default="F7">
+  Toggle the log panel visibility.
+</ParamField>
+
+<ParamField path="save_connection" type="string" default="F10">
+  Save the current connection as a profile in the configuration file.
+</ParamField>
+
+<ParamField path="switch_to_profiles" type="string" default="F1">
+  Switch to the profiles layout to manage saved connection profiles.
+</ParamField>
+
+<ParamField path="next_tab" type="string" default="Ctrl+Right">
+  Switch to the next connection tab.
+</ParamField>
+
+<ParamField path="prev_tab" type="string" default="Ctrl+Left">
+  Switch to the previous connection tab.
+</ParamField>
+
+<ParamField path="close_tab" type="string" default="Ctrl+w">
+  Close the current connection tab.
+</ParamField>
+
+## Additional Global Keys
+
+These global keys are currently not configurable:
+
+| Key | Action |
+|-----|--------|
+| `?` | Show help overlay (alternative to F5) |
+| `/` | Focus search input (alternative to F9) |
+| `F3` | Show about dialog |
+| `gt` | Next tab (vim-style, alternative to Ctrl+Right) |
+| `gT` | Previous tab (vim-style, alternative to Ctrl+Left) |
+
+## Tree Panel
+
+Keybindings when the tree panel (directory browser) has focus.
+
+| Key | Action |
+|-----|--------|
+| `j` / `Down` | Move down to the next entry |
+| `k` / `Up` | Move up to the previous entry |
+| `l` / `Right` / `Enter` | Expand node or select entry |
+| `h` / `Left` | Collapse node |
+| `a` | Create a new child entry under the selected node |
+| `d` / `Delete` | Delete the selected entry (with confirmation) |
+| `Space` | Open context menu |
+
+## Detail Panel
+
+Keybindings when the detail panel (attribute viewer) has focus.
+
+| Key | Action |
+|-----|--------|
+| `j` / `Down` | Move down to the next attribute |
+| `k` / `Up` | Move up to the previous attribute |
+| `e` / `Enter` | Edit the selected attribute value |
+| `a` | Add a new attribute to the entry |
+| `+` | Add another value to a multi-valued attribute |
+| `d` / `Delete` | Delete the selected attribute value (with confirmation) |
+| `n` | Create a new child entry under the current entry |
+| `x` | Delete the current entry (with confirmation) |
+| `r` | Refresh the entry from the server |
+| `Space` | Open context menu |
+
+## Profiles Tree
+
+Keybindings when browsing connection profiles in the profiles layout.
+
+| Key | Action |
+|-----|--------|
+| `j` / `Down` | Move down |
+| `k` / `Up` | Move up |
+| `l` / `Right` | Expand folder or view profile details |
+| `h` / `Left` | Collapse folder |
+| `e` | Edit or view the selected profile |
+| `c` | Connect to the selected profile |
+| `n` | Create a new profile |
+| `d` / `Delete` | Delete the selected profile (with confirmation) |
+| `x` | Export selected profiles to a file |
+| `i` | Import profiles from a file |
+| `Space` | Open context menu |
+
+## Connection Form
+
+Keybindings in the connection form dialog (create/edit profile).
+
+| Key | Action | Mode |
+|-----|--------|------|
+| `Tab` | Move to next field | All |
+| `Shift+Tab` | Move to previous field | All |
+| `e` | Enter edit mode | View mode |
+| `c` | Connect to this profile | View mode |
+| `F2` | Cycle TLS mode (auto → ldaps → starttls → none) | Edit mode |
+| `F3` | Cycle credential method (prompt → command → keychain → vault) | Edit mode |
+| `F10` / `Ctrl+Enter` | Save profile | Edit mode |
+| `Esc` | Cancel editing and close | Edit mode |
+
+## Search Results
+
+Keybindings in the search results popup overlay.
+
+| Key | Action |
+|-----|--------|
+| `j` / `Down` | Move down |
+| `k` / `Up` | Move up |
+| `PageDown` | Jump 10 results down |
+| `PageUp` | Jump 10 results up |
+| `Home` / `g` | Jump to first result |
+| `End` / `G` | Jump to last result |
+| `Enter` | Navigate to the selected entry in the tree |
+| `Esc` / `q` | Close search results |
+
+## Export Dialog
+
+Keybindings in the export dialog.
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Navigate fields |
+| `F2` | Cycle export format (LDIF → JSON → CSV → XLSX) |
+| `Enter` | Execute export |
+| `Esc` | Cancel and close |
+
+## Bulk Update Dialog
+
+Keybindings in the bulk update dialog.
+
+| Key | Action |
+|-----|--------|
+| `Tab` / `Shift+Tab` | Navigate fields |
+| `F2` | Cycle operation type (Replace → Add → Delete) |
+| `Enter` | Execute bulk update |
+| `Esc` | Cancel and close |
+
+## Schema Viewer
+
+Keybindings in the schema viewer.
+
+| Key | Action |
+|-----|--------|
+| `j` / `Down` | Scroll down |
+| `k` / `Up` | Scroll up |
+| `Tab` | Switch between Object Classes and Attribute Types tabs |
+| `/` | Filter by name |
+| `Esc` / `q` | Close schema viewer |
+
+## Log Panel
+
+Keybindings in the log panel.
+
+| Key | Action |
+|-----|--------|
+| `j` / `Down` | Scroll down |
+| `k` / `Up` | Scroll up |
+| `g` / `Home` | Jump to top |
+| `G` / `End` | Jump to bottom |
+| `Esc` / `q` | Close log panel |
+
+## Confirmation Dialog
+
+Keybindings in yes/no confirmation dialogs.
+
+| Key | Action |
+|-----|--------|
+| `y` | Yes (confirm action) |
+| `n` / `Esc` | No (cancel action) |
+| `h` / `Left` | Move to "Yes" button |
+| `l` / `Right` | Move to "No" button |
+| `Enter` | Execute selected option |
+
+## Key Format
+
+When configuring keybindings, use the following format:
+
+- **Single keys**: `"q"`, `"a"`, `"?"`, `"/"`
+- **Function keys**: `"F1"`, `"F2"`, `"F10"`
+- **Modifiers**: `"Ctrl+q"`, `"Alt+t"`, `"Shift+Tab"`
+- **Special keys**: `"Tab"`, `"Enter"`, `"Esc"`, `"Space"`, `"Delete"`
+- **Arrows**: `"Up"`, `"Down"`, `"Left"`, `"Right"`
+- **Combined**: `"Ctrl+Shift+F5"`, `"Alt+Enter"`
+
+<Note>
+  Key names are case-sensitive. Use `"Ctrl"` not `"ctrl"`, `"Shift"` not `"shift"`.
+</Note>
+
+## Vim-Style Navigation
+
+Loom LDAP Browser follows vim conventions for navigation:
+
+- `h` `j` `k` `l` - Left, down, up, right
+- `g` / `G` - Top / bottom
+- `gt` / `gT` - Next / previous tab
+- `/` - Search
+- `?` - Help
+
+Arrow keys and function keys work alongside vim keys for users who prefer standard keyboard navigation.

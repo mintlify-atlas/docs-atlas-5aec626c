@@ -1,0 +1,576 @@
+---
+title: "Editing Directory Entries"
+description: "Modify attributes, create new entries, and manage values with an intuitive editing interface"
+---
+
+Loom provides powerful editing capabilities that let you modify LDAP entries directly from the browser interface.
+
+<Warning>
+Modifications are immediately applied to the LDAP server. Always verify changes carefully, especially in production environments.
+</Warning>
+
+## Editing Attribute Values
+
+<Steps>
+  <Step title="Select an Entry">
+    Navigate to the entry you want to edit in the tree panel.
+    
+    The detail panel shows all attributes for the selected entry.
+  </Step>
+
+  <Step title="Focus Detail Panel">
+    Press `Tab` to move focus to the detail panel.
+  </Step>
+
+  <Step title="Select an Attribute">
+    Use `j`/`k` or arrow keys to select the attribute you want to edit.
+  </Step>
+
+  <Step title="Enter Edit Mode">
+    Press `e` or `Enter` to open the editor for that attribute.
+    
+    An input dialog appears with the current value.
+  </Step>
+
+  <Step title="Modify the Value">
+    Edit the text as needed:
+    
+    - Type to enter text
+    - `Backspace` to delete
+    - `Ctrl+U` to clear the field
+    - `Ctrl+W` to delete previous word
+  </Step>
+
+  <Step title="Save Changes">
+    Press `Enter` to save, or `Esc` to cancel.
+    
+    The change is immediately sent to the LDAP server.
+  </Step>
+</Steps>
+
+<Info>
+If the modification succeeds, you'll see a confirmation message in the status bar. If it fails, an error message explains why.
+</Info>
+
+## Multi-Valued Attributes
+
+Many LDAP attributes can have multiple values (like `objectClass`, `mail`, or `member`).
+
+### Adding a Value
+
+<Steps>
+  <Step title="Select the Attribute">
+    Navigate to a multi-valued attribute in the detail panel.
+  </Step>
+
+  <Step title="Press +">
+    Press `+` to add a new value to the attribute.
+  </Step>
+
+  <Step title="Enter New Value">
+    Type the new value and press `Enter`.
+    
+    The value is added to the attribute's list.
+  </Step>
+</Steps>
+
+**Example:**
+
+```
+mail:
+  • alice@example.com
+  • a.smith@example.com    ← Select this
+  
+Press +, type alice.smith@example.com → Enter
+
+mail:
+  • alice@example.com
+  • a.smith@example.com
+  • alice.smith@example.com  ← New value added
+```
+
+### Editing a Specific Value
+
+For multi-valued attributes:
+
+1. Navigate to the specific value you want to edit
+2. Press `e` or `Enter`
+3. Edit the value
+4. Press `Enter` to save
+
+The specific value is replaced; other values remain unchanged.
+
+### Deleting a Value
+
+<Steps>
+  <Step title="Select the Value">
+    Navigate to the specific value you want to delete.
+  </Step>
+
+  <Step title="Press Delete">
+    Press `d` or `Delete`.
+  </Step>
+
+  <Step title="Confirm">
+    A confirmation dialog appears. Press `y` to confirm or `n` to cancel.
+  </Step>
+</Steps>
+
+<Warning>
+Some attributes are required by the entry's object classes. Deleting a required attribute will fail with an error.
+</Warning>
+
+## Adding New Attributes
+
+You can add new attributes to an entry:
+
+<Steps>
+  <Step title="Focus Detail Panel">
+    Ensure the detail panel is focused (press `Tab` if needed).
+  </Step>
+
+  <Step title="Press a">
+    Press `a` to open the "Add Attribute" dialog.
+  </Step>
+
+  <Step title="Select Attribute">
+    A list of available attributes appears, filtered by the entry's object classes.
+    
+    - Type to search for an attribute name
+    - Use `j`/`k` to navigate the list
+    - Press `Enter` to select
+
+    <Info>
+    Only attributes allowed by the entry's schema are shown. This prevents adding invalid attributes.
+    </Info>
+  </Step>
+
+  <Step title="Enter Value">
+    After selecting an attribute, enter its value and press `Enter`.
+    
+    The attribute is added to the entry on the server.
+  </Step>
+</Steps>
+
+**Example adding a `telephoneNumber`:**
+
+```
+1. Press 'a'
+2. Type "tele" to filter
+3. Select "telephoneNumber" from list
+4. Enter "+1-555-0123"
+5. Press Enter
+
+→ telephoneNumber: +1-555-0123 is added to the entry
+```
+
+## DN-Valued Attributes
+
+Some attributes store Distinguished Names (DNs) as values, like:
+
+- `member` (group members)
+- `manager` (reporting manager)
+- `seeAlso` (related entries)
+
+When editing DN-valued attributes, Loom provides **DN Search Mode**:
+
+### Using DN Search Mode
+
+<Steps>
+  <Step title="Start Editing">
+    Press `e` on a DN-valued attribute (like `member`).
+    
+    The DN search interface appears.
+  </Step>
+
+  <Step title="Search for Entry">
+    Type a search term (like a person's name).
+    
+    Loom performs a live search and shows matching entries.
+  </Step>
+
+  <Step title="Select Entries">
+    - Use `j`/`k` to navigate results
+    - Press `Space` to toggle selection (multi-select)
+    - Press `Enter` when done
+    
+    Selected DNs are added to the attribute.
+  </Step>
+</Steps>
+
+**Example adding group members:**
+
+```
+Editing: member
+
+┌─ Search for DN ─────────────────────────┐
+│ alice                                   │
+├─────────────────────────────────────────┤
+│ [✓] cn=Alice Smith,ou=users,dc=ex...   │
+│ [ ] cn=Alice Jones,ou=users,dc=ex...   │
+│                                         │
+│ Space:toggle  Enter:add  Esc:cancel    │
+└─────────────────────────────────────────┘
+```
+
+<Tip>
+You can select multiple DNs at once by pressing `Space` on each entry before pressing `Enter`.
+</Tip>
+
+## Creating New Entries
+
+Create new entries as children of existing entries:
+
+<Steps>
+  <Step title="Select Parent Entry">
+    Navigate to the entry that will be the parent (in the tree panel).
+  </Step>
+
+  <Step title="Press a (Tree) or n (Detail)">
+    - From tree panel: Press `a`
+    - From detail panel: Press `n`
+    
+    Both open the "Create Entry" dialog.
+  </Step>
+
+  <Step title="Enter RDN">
+    Enter the Relative Distinguished Name (RDN) for the new entry.
+    
+    **Examples:**
+    - `cn=NewUser`
+    - `ou=NewDepartment`
+    - `uid=jsmith`
+
+    <Note>
+    The RDN must include an attribute=value pair. This becomes the naming attribute for the entry.
+    </Note>
+  </Step>
+
+  <Step title="Specify Object Classes">
+    Enter one or more object classes, comma-separated.
+    
+    **Examples:**
+    - `inetOrgPerson,posixAccount`
+    - `organizationalUnit`
+    - `groupOfNames`
+
+    <Warning>
+    You must include at least one structural object class. The schema determines which classes are allowed together.
+    </Warning>
+  </Step>
+
+  <Step title="Add Extra Attributes (Optional)">
+    Enter additional attributes as comma-separated `attribute=value` pairs.
+    
+    **Example:**
+    ```
+    sn=Smith,mail=jsmith@example.com,uidNumber=1001
+    ```
+  </Step>
+
+  <Step title="Confirm Creation">
+    Press `Enter` to create the entry.
+    
+    The new entry appears in the tree under its parent.
+  </Step>
+</Steps>
+
+### Example: Creating a User
+
+```
+Parent: ou=users,dc=example,dc=com
+
+Create Entry Dialog:
+  RDN: cn=John Smith
+  Object Classes: inetOrgPerson,posixAccount
+  Extra Attributes: sn=Smith,uid=jsmith,uidNumber=1002,gidNumber=1000,homeDirectory=/home/jsmith
+
+Result:
+  Created: cn=John Smith,ou=users,dc=example,dc=com
+```
+
+<Tip>
+After creating an entry, you can immediately edit it to add more attributes using the `a` key in the detail panel.
+</Tip>
+
+### Example: Creating an Organizational Unit
+
+```
+Parent: dc=example,dc=com
+
+Create Entry Dialog:
+  RDN: ou=engineering
+  Object Classes: organizationalUnit
+  Extra Attributes: description=Engineering Department
+
+Result:
+  Created: ou=engineering,dc=example,dc=com
+```
+
+## Deleting Entries
+
+<Warning>
+Deleting entries is permanent and cannot be undone. Always verify you're deleting the correct entry.
+</Warning>
+
+### From Tree Panel
+
+<Steps>
+  <Step title="Select Entry">
+    Navigate to the entry you want to delete in the tree panel.
+  </Step>
+
+  <Step title="Press Delete">
+    Press `d` or `Delete`.
+  </Step>
+
+  <Step title="Confirm Deletion">
+    A confirmation dialog appears:
+    
+    ```
+    Delete entry: cn=John Smith,ou=users,dc=example,dc=com?
+    
+    [Yes]  [No]
+    ```
+    
+    Press `y` to confirm or `n` to cancel.
+  </Step>
+</Steps>
+
+### From Detail Panel
+
+<Steps>
+  <Step title="Focus Detail Panel">
+    Press `Tab` to focus the detail panel.
+  </Step>
+
+  <Step title="Press x">
+    Press `x` to delete the current entry.
+  </Step>
+
+  <Step title="Confirm">
+    Confirm the deletion in the dialog.
+  </Step>
+</Steps>
+
+<Note>
+LDAP servers will reject deletion of entries that have children. You must delete all children first, or use a recursive delete tool outside of Loom.
+</Note>
+
+## Bulk Updates
+
+For modifying multiple entries at once, use the bulk update feature:
+
+<Steps>
+  <Step title="Press F8">
+    Open the bulk update dialog.
+  </Step>
+
+  <Step title="Choose Operation">
+    Press `F2` to cycle between:
+    - **Replace** - Replace attribute value
+    - **Add** - Add attribute value
+    - **Delete** - Delete attribute value
+  </Step>
+
+  <Step title="Enter Filter">
+    Enter an LDAP filter to match entries.
+    
+    **Example:**
+    ```ldap
+    (&(objectClass=person)(ou=engineering))
+    ```
+  </Step>
+
+  <Step title="Specify Attribute">
+    Enter the attribute name to modify.
+    
+    **Example:** `department`
+  </Step>
+
+  <Step title="Enter Value">
+    Enter the new value.
+    
+    **Example:** `Engineering`
+  </Step>
+
+  <Step title="Execute">
+    Press `Enter` to execute the bulk update.
+    
+    A status message reports how many entries were modified.
+  </Step>
+</Steps>
+
+**Example: Set department for all engineers**
+
+```
+Operation: Replace
+Filter: (&(objectClass=inetOrgPerson)(ou=engineering))
+Attribute: department
+Value: Engineering
+
+→ Modified 42 entries
+```
+
+<Warning>
+Bulk updates affect all matching entries immediately. Test with a restrictive filter first to verify the correct entries are matched.
+</Warning>
+
+## Read-Only Mode
+
+To prevent accidental modifications, enable read-only mode:
+
+```toml
+[[connections]]
+name = "Production (Read Only)"
+host = "ldap.example.com"
+read_only = true
+```
+
+In read-only mode:
+- All edit operations are disabled
+- Create and delete operations are disabled  
+- You can browse and search normally
+- A "READ ONLY" indicator appears in the status bar
+
+<Tip>
+Use read-only mode for production servers where you only need to view data.
+</Tip>
+
+## Refreshing Entries
+
+If another user or process modifies an entry, you can refresh to see the latest values:
+
+- **From tree:** Press `r` to refresh children of a node
+- **From detail:** Press `r` to refresh the current entry's attributes
+
+The entry is re-fetched from the server with current values.
+
+## Context Menu
+
+Press `Space` in the detail panel to open a context menu with all editing operations:
+
+- Edit value
+- Add value (multi-valued attributes)
+- Delete value
+- Add new attribute
+- Copy value
+- Copy attribute name
+- Refresh entry
+- Delete entry
+
+## Schema Validation
+
+Loom validates modifications against the LDAP schema:
+
+<AccordionGroup>
+  <Accordion title="Required attributes">
+    Object classes define MUST attributes that cannot be deleted:
+    
+    **Example:** `inetOrgPerson` requires `cn` and `sn`
+    
+    Attempting to delete a required attribute will fail with:
+    ```
+    Error: Attribute 'cn' is required by objectClass 'inetOrgPerson'
+    ```
+  </Accordion>
+
+  <Accordion title="Allowed attributes">
+    Only MAY and MUST attributes from the entry's object classes can be added:
+    
+    **Example:** Cannot add `uidNumber` to an entry that doesn't have `posixAccount` object class.
+    
+    Add the object class first, then add the attribute.
+  </Accordion>
+
+  <Accordion title="Single-valued attributes">
+    Some attributes only allow one value:
+    
+    **Examples:** `displayName`, `uidNumber`, `gidNumber`
+    
+    Attempting to add a second value will fail.
+  </Accordion>
+
+  <Accordion title="Attribute syntax">
+    Each attribute has a syntax (string, integer, DN, etc.):
+    
+    **Example:** `uidNumber` must be an integer
+    
+    Entering "abc" will fail with:
+    ```
+    Error: Invalid syntax for attribute 'uidNumber'
+    ```
+  </Accordion>
+</AccordionGroup>
+
+<Info>
+Press `F6` to open the schema viewer and see object class definitions and attribute requirements.
+</Info>
+
+## Error Handling
+
+If a modification fails, Loom shows an error message with details:
+
+### Common Errors
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| **Insufficient access** | No permission to modify | Check bind DN has write access |
+| **Object class violation** | Attribute not allowed | Add required object class first |
+| **Constraint violation** | Value doesn't match syntax | Check attribute syntax requirements |
+| **Entry already exists** | Creating duplicate entry | Choose a different RDN |
+| **Not allowed on non-leaf** | Deleting entry with children | Delete children first |
+
+<Tip>
+Check the log panel (`F7`) for detailed error messages from the LDAP server.
+</Tip>
+
+## Keyboard Reference
+
+### Detail Panel Editing
+
+| Key | Action |
+|-----|--------|
+| `e` / `Enter` | Edit selected attribute value |
+| `a` | Add new attribute |
+| `+` | Add value to multi-valued attribute |
+| `d` / `Delete` | Delete attribute value |
+| `n` | Create child entry |
+| `x` | Delete this entry |
+| `r` | Refresh entry from server |
+| `Space` | Open context menu |
+
+### Tree Panel Editing
+
+| Key | Action |
+|-----|--------|
+| `a` | Create child entry |
+| `d` / `Delete` | Delete selected entry |
+| `r` | Refresh node children |
+| `Space` | Open context menu |
+
+### Bulk Update Dialog
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Next field |
+| `F2` | Cycle operation type |
+| `Enter` | Execute bulk update |
+| `Esc` | Cancel |
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Searching" icon="magnifying-glass" href="/guide/searching">
+    Find entries to edit with LDAP filters
+  </Card>
+  <Card title="Schema Viewer" icon="book" href="/features/schema-viewer">
+    View attribute types and object class requirements
+  </Card>
+  <Card title="Bulk Update" icon="list-check" href="/features/bulk-operations">
+    Modify multiple entries at once
+  </Card>
+  <Card title="Export/Import" icon="arrows-rotate" href="/features/export-import">
+    Batch operations with LDIF files
+  </Card>
+</CardGroup>

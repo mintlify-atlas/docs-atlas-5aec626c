@@ -1,0 +1,318 @@
+---
+title: Context Menus
+description: Context menus and mouse support for quick access to common actions
+---
+
+Context menus provide quick access to relevant actions through keyboard shortcuts and mouse interactions. They appear as popup menus with actions appropriate to the selected item.
+
+## Opening Context Menus
+
+There are two ways to open a context menu:
+
+<Tabs>
+  <Tab title="Keyboard">
+    ### Keyboard Access
+
+    Press `Space` on any selected item to open its context menu.
+
+    **Available in:**
+    - **Tree panel** — Press `Space` on a directory entry
+    - **Detail panel** — Press `Space` on an attribute
+    - **Profiles tree** — Press `Space` on a profile or folder
+
+    The menu appears centered on screen with all available actions for the selected item.
+  </Tab>
+  
+  <Tab title="Mouse">
+    ### Mouse Support
+
+    Right-click on any item to open its context menu.
+
+    **Mouse interactions:**
+    - **Left-click** — Select item
+    - **Right-click** — Open context menu
+    - **Scroll wheel** — Navigate lists (where supported)
+
+    <Info>
+      Mouse support requires a terminal emulator that supports mouse events. Most modern terminals (iTerm2, Windows Terminal, Alacritty, Kitty) support mouse interactions.
+    </Info>
+  </Tab>
+</Tabs>
+
+## Context Menu Locations
+
+<Steps>
+  <Step title="Tree Panel Context Menu">
+    Right-click or press `Space` on a tree node (directory entry) to access:
+
+    - **View Entry** — Open entry details in the detail panel
+    - **Create Child** — Create a new child entry under this node
+    - **Delete Entry** — Delete this entry (with confirmation)
+    - **Copy DN** — Copy the distinguished name to clipboard
+    - **Refresh** — Reload this entry and its children from the server
+    - **Expand/Collapse** — Toggle node expansion
+  </Step>
+  
+  <Step title="Detail Panel Context Menu">
+    Right-click or press `Space` on an attribute in the detail panel:
+
+    - **Edit Value** — Open the editor for this attribute
+    - **Add Value** — Add another value (multi-valued attributes)
+    - **Delete Value** — Remove this attribute value
+    - **Copy Value** — Copy the value to clipboard
+    - **Copy Attribute Name** — Copy the attribute name
+  </Step>
+  
+  <Step title="Profiles Context Menu">
+    Right-click or press `Space` on a profile or folder:
+
+    **For profiles:**
+    - **Connect** — Connect to this profile
+    - **Edit** — Edit profile settings
+    - **Duplicate** — Create a copy of this profile
+    - **Delete** — Remove this profile
+    - **Export** — Export to a file
+
+    **For folders:**
+    - **New Profile** — Create a new profile in this folder
+    - **New Subfolder** — Create a subfolder
+    - **Rename** — Rename the folder
+    - **Delete** — Remove folder (must be empty)
+  </Step>
+</Steps>
+
+## Navigation and Selection
+
+<Steps>
+  <Step title="Open menu">
+    Press `Space` or right-click on the selected item.
+  </Step>
+  
+  <Step title="Navigate options">
+    - `j` / `k` or arrow keys — Move up/down
+    - `Enter` — Execute the selected action
+    - `Esc` / `q` — Close menu without action
+  </Step>
+  
+  <Step title="Quick select">
+    Press the highlighted letter in each action to execute it immediately:
+    - `e` — Edit
+    - `d` — Delete
+    - `c` — Copy/Connect
+    - `r` — Refresh
+  </Step>
+</Steps>
+
+<Info>
+  Quick letter selection provides fast access without navigating through the menu. Just press the highlighted letter to execute that action.
+</Info>
+
+## Common Context Menu Actions
+
+### Tree Panel Actions
+
+| Action | Description | Shortcut |
+|--------|-------------|----------|
+| **View Entry** | Show entry in detail panel | `Enter`, `l` |
+| **Create Child** | Create new entry under selected node | `a` |
+| **Delete Entry** | Delete entry with confirmation | `d`, `Delete` |
+| **Copy DN** | Copy distinguished name to clipboard | `y` |
+| **Refresh** | Reload entry from server | `r` |
+| **Expand** | Expand node to show children | `l`, `Right` |
+| **Collapse** | Collapse expanded node | `h`, `Left` |
+
+### Detail Panel Actions
+
+| Action | Description | Shortcut |
+|--------|-------------|----------|
+| **Edit Value** | Open attribute editor | `e`, `Enter` |
+| **Add Value** | Add another value (multi-valued) | `+` |
+| **Add Attribute** | Add a new attribute to the entry | `a` |
+| **Delete Value** | Remove attribute value | `d`, `Delete` |
+| **Copy Value** | Copy value to clipboard | `y` |
+| **Copy Attribute** | Copy attribute name | `Y` |
+| **Refresh Entry** | Reload entry from server | `r` |
+| **Delete Entry** | Delete entire entry | `x` |
+
+### Profiles Actions
+
+| Action | Description | Shortcut |
+|--------|-------------|----------|
+| **Connect** | Connect to profile | `c` |
+| **Edit** | Edit profile settings | `e` |
+| **New Profile** | Create new profile | `n` |
+| **Duplicate** | Copy profile | `D` |
+| **Delete** | Remove profile | `d`, `Delete` |
+| **Export** | Export to file | `x` |
+| **Import** | Import from file | `i` |
+
+## Mouse Support Details
+
+### Enabling Mouse Support
+
+Mouse support is enabled automatically when your terminal supports it. No configuration is required.
+
+**Supported terminals:**
+- iTerm2 (macOS)
+- Windows Terminal (Windows)
+- Alacritty (cross-platform)
+- Kitty (Linux/macOS)
+- WezTerm (cross-platform)
+- GNOME Terminal (Linux)
+- Konsole (Linux)
+
+**Not supported:**
+- Basic terminal apps without mouse event support
+- Some SSH sessions (depends on client configuration)
+
+<Note>
+  If mouse support isn't working, check your terminal's settings to ensure mouse reporting is enabled. For SSH sessions, use the `-X` or `-Y` flag to enable mouse forwarding.
+</Note>
+
+### Mouse Interactions
+
+**Tree Panel:**
+- **Left-click node** — Select entry
+- **Left-click expand icon** — Expand/collapse node
+- **Right-click node** — Context menu
+- **Double-click node** — Expand and view details
+- **Scroll wheel** — Navigate tree
+
+**Detail Panel:**
+- **Left-click attribute** — Select attribute
+- **Double-click attribute** — Edit value
+- **Right-click attribute** — Context menu
+- **Scroll wheel** — Navigate attributes
+
+**Profiles:**
+- **Left-click profile** — Select profile
+- **Double-click profile** — Connect
+- **Right-click profile** — Context menu
+- **Scroll wheel** — Navigate profiles
+
+## Keyboard-Only Usage
+
+You can use Loom entirely without a mouse. All context menu actions are available through direct keyboard shortcuts:
+
+**Tree Panel (vim-style navigation):**
+```
+j/k       — Move up/down
+h/l       — Collapse/expand
+Enter     — View entry
+a         — Create child
+d         — Delete
+Space     — Context menu
+```
+
+**Detail Panel:**
+```
+j/k       — Move up/down
+e/Enter   — Edit value
+a         — Add attribute
++         — Add value
+d         — Delete value
+Space     — Context menu
+```
+
+**Profiles:**
+```
+j/k       — Move up/down
+c         — Connect
+e         — Edit
+n         — New profile
+d         — Delete
+Space     — Context menu
+```
+
+<Info>
+  Context menus are designed for discoverability. Experienced users can use direct keyboard shortcuts for faster navigation, while new users can explore available actions through the context menu.
+</Info>
+
+## Copy to Clipboard
+
+Context menus include clipboard operations for easy data extraction:
+
+**Supported clipboard actions:**
+- **Copy DN** — Copy distinguished name (e.g., `cn=Alice,ou=Users,dc=example,dc=com`)
+- **Copy Value** — Copy attribute value (e.g., `alice@example.com`)
+- **Copy Attribute Name** — Copy attribute name (e.g., `mail`)
+
+<Note>
+  Clipboard operations require terminal support for OSC 52 escape sequences or a system clipboard. Modern terminals like iTerm2, Windows Terminal, and WezTerm support clipboard operations.
+</Note>
+
+### Clipboard Workflow
+
+<Steps>
+  <Step title="Select item">
+    Navigate to the entry or attribute you want to copy.
+  </Step>
+  
+  <Step title="Open context menu">
+    Press `Space` or right-click.
+  </Step>
+  
+  <Step title="Copy">
+    Select the copy action (Copy DN, Copy Value, etc.).
+  </Step>
+  
+  <Step title="Paste">
+    The value is now in your clipboard. Paste it into another application with `Cmd+V` (macOS) or `Ctrl+V` (Windows/Linux).
+  </Step>
+</Steps>
+
+## Context Menu Customization
+
+Context menu actions are not currently customizable through configuration. The menu items are determined by:
+- The type of item selected (entry, attribute, profile)
+- The current state (expanded/collapsed, single/multi-valued)
+- Available operations (schema constraints, permissions)
+
+<Info>
+  Future versions may support customizable context menu actions through configuration.
+</Info>
+
+## Accessibility
+
+### Keyboard Navigation
+
+All context menu actions are accessible via keyboard:
+- Tab navigation between panels
+- Vim-style (`hjkl`) or arrow keys for navigation
+- Direct keyboard shortcuts for all actions
+- Quick letter selection in context menus
+
+### Screen Reader Compatibility
+
+Context menus include text labels for all actions, making them compatible with screen readers that support terminal applications.
+
+### High Contrast Mode
+
+Use the `light` theme or create a custom high-contrast theme for improved visibility:
+
+```toml
+[general]
+theme = "light"  # Or create a custom high-contrast theme
+```
+
+## Tips and Tricks
+
+<Info>
+  **Power User Tips:**
+  - Learn the direct keyboard shortcuts for common actions to bypass context menus
+  - Use `Space` to quickly explore available actions when learning
+  - Right-click with your mouse for quick access while browsing
+  - Combine keyboard navigation with mouse actions for maximum efficiency
+  - Use vim-style keys (`hjkl`) for faster navigation without moving your hands
+</Info>
+
+## Keybindings
+
+| Key | Action |
+|-----|--------|
+| `Space` | Open context menu |
+| Right-click | Open context menu (mouse) |
+| `j` / `k` / arrows | Navigate menu items |
+| `Enter` | Execute selected action |
+| `Esc` / `q` | Close menu |
+| Letter keys | Quick select action (highlighted letter) |

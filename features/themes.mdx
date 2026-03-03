@@ -1,0 +1,386 @@
+---
+title: Themes
+description: Built-in color themes and custom theme support for the Loom LDAP Browser interface
+---
+
+Loom LDAP Browser includes five built-in themes and supports custom themes for a personalized interface.
+
+## Built-in Themes
+
+Loom ships with five professionally designed color schemes:
+
+<Tabs>
+  <Tab title="dark">
+    ### Dark Theme (Default)
+
+    The default theme using the Catppuccin Mocha color palette.
+
+    **Features:**
+    - Deep, rich backgrounds with excellent contrast
+    - Warm accent colors (lavender, peach, teal)
+    - Easy on the eyes for extended use
+    - Professional appearance
+
+    **Best for:** Most users, extended terminal sessions, modern terminals
+
+    ```toml
+    [general]
+    theme = "dark"
+    ```
+  </Tab>
+  
+  <Tab title="light">
+    ### Light Theme
+
+    A bright theme with light backgrounds and blue accents.
+
+    **Features:**
+    - Crisp white/light gray backgrounds
+    - Blue accent colors for headers and selections
+    - High contrast for bright environments
+    - Clean, minimalist appearance
+
+    **Best for:** Well-lit offices, users who prefer light backgrounds, accessibility
+
+    ```toml
+    [general]
+    theme = "light"
+    ```
+  </Tab>
+  
+  <Tab title="solarized">
+    ### Solarized Theme
+
+    The classic Solarized Dark color scheme.
+
+    **Features:**
+    - Precision colors designed for reduced eye strain
+    - Balanced warm and cool tones
+    - Scientifically-tested contrast ratios
+    - Familiar to many developers
+
+    **Best for:** Solarized fans, long coding sessions, color harmony
+
+    ```toml
+    [general]
+    theme = "solarized"
+    ```
+  </Tab>
+  
+  <Tab title="nord">
+    ### Nord Theme
+
+    Arctic, north-bluish color scheme.
+
+    **Features:**
+    - Cool, frost-inspired palette
+    - Blue and teal dominant colors
+    - Smooth, cohesive appearance
+    - Popular in the developer community
+
+    **Best for:** Nord theme fans, cold color palette preference, consistency with other Nord-themed apps
+
+    ```toml
+    [general]
+    theme = "nord"
+    ```
+  </Tab>
+  
+  <Tab title="matrix">
+    ### Matrix Theme
+
+    Green-on-black terminal aesthetic.
+
+    **Features:**
+    - Pure black background
+    - Bright green text and accents
+    - Classic terminal appearance
+    - High nostalgia factor
+
+    **Best for:** Retro terminal aesthetics, dark environments, movie-style hacking vibe
+
+    ```toml
+    [general]
+    theme = "matrix"
+    ```
+  </Tab>
+</Tabs>
+
+## Setting Your Theme
+
+Themes are configured in `~/.config/loom-ldapbrowser/config.toml`:
+
+<Steps>
+  <Step title="Edit configuration">
+    Open your configuration file:
+    ```bash
+    $EDITOR ~/.config/loom-ldapbrowser/config.toml
+    ```
+  </Step>
+  
+  <Step title="Set theme">
+    Add or modify the `theme` setting in the `[general]` section:
+    ```toml
+    [general]
+    theme = "nord"  # dark | light | solarized | nord | matrix
+    ```
+  </Step>
+  
+  <Step title="Restart Loom">
+    Exit and restart loom-ldapbrowser for the theme change to take effect.
+  </Step>
+</Steps>
+
+<Info>
+  Theme changes require a restart. There is no hot-reload functionality for theme changes.
+</Info>
+
+## Custom Themes
+
+Create your own themes by placing theme TOML files in `~/.config/loom-ldapbrowser/themes/`.
+
+### Theme File Structure
+
+A theme file defines colors for all UI elements using hex colors (`#RRGGBB`) or named colors.
+
+<Steps>
+  <Step title="Create theme directory">
+    ```bash
+    mkdir -p ~/.config/loom-ldapbrowser/themes
+    ```
+  </Step>
+  
+  <Step title="Create theme file">
+    Create a file like `~/.config/loom-ldapbrowser/themes/mytheme.toml`:
+    ```toml
+    # Custom theme example
+    [colors]
+    # Base colors
+    background = "#1e1e2e"
+    foreground = "#cdd6f4"
+    
+    # UI element colors
+    border = "#89b4fa"
+    border_focused = "#f5c2e7"
+    
+    # Text colors
+    text = "#cdd6f4"
+    text_secondary = "#a6adc8"
+    text_muted = "#6c7086"
+    
+    # Selection and highlight
+    selection_bg = "#45475a"
+    selection_fg = "#cdd6f4"
+    highlight = "#f9e2af"
+    
+    # Headers and titles
+    header_bg = "#313244"
+    header_fg = "#89b4fa"
+    
+    # Status and indicators
+    status_bar_bg = "#1e1e2e"
+    status_bar_fg = "#cdd6f4"
+    success = "#a6e3a1"
+    warning = "#f9e2af"
+    error = "#f38ba8"
+    info = "#89dceb"
+    
+    # Tabs
+    tab_active_bg = "#45475a"
+    tab_active_fg = "#cdd6f4"
+    tab_inactive_bg = "#1e1e2e"
+    tab_inactive_fg = "#6c7086"
+    
+    # Tree view
+    tree_node = "#cdd6f4"
+    tree_node_selected = "#f5c2e7"
+    tree_expanded = "#a6e3a1"
+    tree_collapsed = "#89b4fa"
+    
+    # Input fields
+    input_bg = "#313244"
+    input_fg = "#cdd6f4"
+    input_border = "#45475a"
+    input_border_focused = "#89b4fa"
+    
+    # Buttons
+    button_bg = "#45475a"
+    button_fg = "#cdd6f4"
+    button_active_bg = "#89b4fa"
+    button_active_fg = "#1e1e2e"
+    ```
+  </Step>
+  
+  <Step title="Use custom theme">
+    Reference your theme by filename (without `.toml`):
+    ```toml
+    [general]
+    theme = "mytheme"
+    ```
+  </Step>
+</Steps>
+
+### Color Format
+
+Colors can be specified in several formats:
+
+<CodeGroup>
+```toml Hex colors
+background = "#1e1e2e"  # 6-digit hex
+foreground = "#cdd6f4"
+```
+
+```toml Named colors
+error = "red"
+success = "green"
+warning = "yellow"
+info = "blue"
+```
+
+```toml RGB values
+custom_color = "rgb(123, 45, 67)"
+```
+</CodeGroup>
+
+<Note>
+  Hex colors are recommended for precise color control. Named colors depend on your terminal's color palette configuration.
+</Note>
+
+### Theme Elements
+
+Custom themes can define colors for these UI elements:
+
+| Element | Description |
+|---------|-------------|
+| `background` | Main background color |
+| `foreground` | Main text color |
+| `border` | Border color for unfocused panels |
+| `border_focused` | Border color for the focused panel |
+| `selection_bg` | Background for selected items |
+| `selection_fg` | Text color for selected items |
+| `header_bg` | Background for panel headers |
+| `header_fg` | Text color for panel headers |
+| `success` | Color for success messages |
+| `warning` | Color for warnings |
+| `error` | Color for error messages |
+| `info` | Color for informational messages |
+| `tab_active_bg` | Background for active tab |
+| `tab_active_fg` | Text color for active tab |
+| `tree_node_selected` | Color for selected tree node |
+| `input_border_focused` | Border color for focused input |
+
+<Info>
+  Not all elements need to be defined. Missing colors fall back to defaults from the base theme.
+</Info>
+
+## Terminal Compatibility
+
+For best results, use a terminal with true color (24-bit) support:
+
+- **Recommended terminals:**
+  - iTerm2 (macOS)
+  - Alacritty (cross-platform)
+  - Windows Terminal (Windows)
+  - Kitty (Linux/macOS)
+  - WezTerm (cross-platform)
+
+- **Test true color support:**
+  ```bash
+  # Run this command to test 24-bit color
+  printf "\x1b[38;2;255;100;0mTRUECOLOR\x1b[0m\n"
+  ```
+
+<Note>
+  If your terminal doesn't support true color, Loom will still work but colors may appear differently than intended.
+</Note>
+
+## Theme Examples
+
+### High Contrast Theme
+
+For maximum readability:
+
+```toml
+[colors]
+background = "#000000"
+foreground = "#ffffff"
+border = "#ffffff"
+selection_bg = "#ffffff"
+selection_fg = "#000000"
+error = "#ff0000"
+success = "#00ff00"
+warning = "#ffff00"
+```
+
+### Dracula Theme
+
+Popular dark theme:
+
+```toml
+[colors]
+background = "#282a36"
+foreground = "#f8f8f2"
+border = "#6272a4"
+selection_bg = "#44475a"
+selection_fg = "#f8f8f2"
+highlight = "#ffb86c"
+error = "#ff5555"
+success = "#50fa7b"
+warning = "#f1fa8c"
+info = "#8be9fd"
+```
+
+### Gruvbox Dark Theme
+
+Retro groove colors:
+
+```toml
+[colors]
+background = "#282828"
+foreground = "#ebdbb2"
+border = "#928374"
+selection_bg = "#504945"
+selection_fg = "#ebdbb2"
+highlight = "#fabd2f"
+error = "#fb4934"
+success = "#b8bb26"
+warning = "#fe8019"
+info = "#83a598"
+```
+
+## Tips for Custom Themes
+
+<Info>
+  **Theme Design Tips:**
+  - Use a color palette generator like [Coolors](https://coolors.co/) for harmonious colors
+  - Test your theme with different panel layouts and content
+  - Ensure sufficient contrast between text and backgrounds (WCAG AA: 4.5:1 minimum)
+  - Use consistent saturation levels for a cohesive appearance
+  - Test in different lighting conditions
+</Info>
+
+## Sharing Themes
+
+Share your custom themes with the community:
+
+1. Place your theme file in a git repository
+2. Share the TOML file on GitHub or in discussions
+3. Include a screenshot of the theme in use
+
+Other users can download your theme file and place it in their `~/.config/loom-ldapbrowser/themes/` directory.
+
+## Configuration Reference
+
+```toml
+[general]
+# Built-in themes: dark, light, solarized, nord, matrix
+# Custom themes: filename without .toml extension
+theme = "dark"
+
+# Other display settings
+tick_rate_ms = 250  # UI refresh rate
+```
+
+<Note>
+  Theme files are loaded at startup. If you modify a theme file, restart loom-ldapbrowser to see the changes.
+</Note>

@@ -1,0 +1,209 @@
+---
+title: Installation
+description: Install Loom LDAP Browser from source with Cargo or download prebuilt binaries for your platform
+---
+
+## Requirements
+
+Loom LDAP Browser requires:
+
+- **Terminal emulator** with Unicode and color support
+- **Operating system**: Linux, macOS, or Windows
+
+<Note>
+  For the best experience, use a terminal with 256-color support and a monospace font with good Unicode coverage.
+</Note>
+
+## Installation methods
+
+<Tabs>
+  <Tab title="Prebuilt binaries">
+    ### Download prebuilt binaries
+
+    The easiest way to get started is to download a prebuilt binary for your platform.
+
+    <Steps>
+      <Step title="Visit the releases page">
+        Navigate to the [GitHub Releases](https://github.com/trepidity/loom-ldapbrowser/releases) page and find the latest version.
+      </Step>
+
+      <Step title="Download for your platform">
+        Download the appropriate binary for your system:
+
+        | Platform | Architecture | Download |
+        |----------|--------------|----------|
+        | Linux | x86_64 | `loom-ldapbrowser-linux-x86_64` |
+        | Linux | aarch64 | `loom-ldapbrowser-linux-aarch64` |
+        | macOS | Intel | `loom-ldapbrowser-macos-x86_64` |
+        | macOS | Apple Silicon | `loom-ldapbrowser-macos-aarch64` |
+        | Windows | x86_64 | `loom-ldapbrowser-windows-x86_64.exe` |
+      </Step>
+
+      <Step title="Make it executable">
+        On Linux and macOS, make the binary executable:
+
+        ```bash
+        chmod +x loom-ldapbrowser-*
+        ```
+      </Step>
+
+      <Step title="Move to your PATH">
+        Move the binary to a directory in your PATH for easy access:
+
+        **Linux/macOS:**
+        ```bash
+        sudo mv loom-ldapbrowser-* /usr/local/bin/loom-ldapbrowser
+        ```
+
+        **Windows:**
+        Move the `.exe` file to a directory in your PATH, or add its location to your PATH environment variable.
+      </Step>
+
+      <Step title="Verify installation">
+        Verify the installation by checking the version:
+
+        ```bash
+        loom-ldapbrowser --version
+        ```
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="From source">
+    ### Build from source with Cargo
+
+    Building from source gives you the latest features and allows you to customize the build.
+
+    <Steps>
+      <Step title="Install Rust">
+        Loom LDAP Browser requires **Rust 1.80 or later**.
+
+        If you don't have Rust installed, get it from [rustup.rs](https://rustup.rs):
+
+        ```bash
+        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+        ```
+
+        After installation, ensure Rust is up to date:
+
+        ```bash
+        rustup update
+        ```
+      </Step>
+
+      <Step title="Clone the repository">
+        Clone the Loom LDAP Browser repository:
+
+        ```bash
+        git clone https://github.com/trepidity/loom-ldapbrowser.git
+        cd loom-ldapbrowser
+        ```
+      </Step>
+
+      <Step title="Build and install">
+        Use Cargo to build and install the binary:
+
+        ```bash
+        cargo install --path crates/loom-ldapbrowser
+        ```
+
+        This compiles the project in release mode and installs the binary to `~/.cargo/bin/loom-ldapbrowser`.
+
+        <Tip>
+          Make sure `~/.cargo/bin` is in your PATH. Most Rust installations add this automatically.
+        </Tip>
+      </Step>
+
+      <Step title="Verify installation">
+        Verify the installation by checking the version:
+
+        ```bash
+        loom-ldapbrowser --version
+        ```
+      </Step>
+    </Steps>
+
+    ### Build for development
+
+    If you're developing or testing changes, you can build without installing:
+
+    ```bash
+    # Build in debug mode
+    cargo build --workspace
+
+    # Run directly
+    cargo run --bin loom-ldapbrowser
+
+    # Build in release mode for better performance
+    cargo build --release --workspace
+    ./target/release/loom-ldapbrowser
+    ```
+
+    ### Run tests
+
+    Verify everything works by running the test suite:
+
+    ```bash
+    cargo test --workspace
+    ```
+  </Tab>
+</Tabs>
+
+## Configuration directory
+
+On first run, Loom LDAP Browser creates a configuration directory:
+
+- **Linux/macOS**: `~/.config/loom-ldapbrowser/`
+- **Windows**: `%APPDATA%\loom-ldapbrowser\`
+
+This directory contains:
+
+- `config.toml` - Main configuration file with connection profiles and settings
+- `themes/` - Custom theme files (optional)
+
+<Note>
+  The configuration file is created automatically when you save your first connection profile. You can also create it manually before first run.
+</Note>
+
+## Command-line options
+
+Loom LDAP Browser supports several command-line options:
+
+```bash
+loom-ldapbrowser [OPTIONS]
+```
+
+### Options
+
+| Option | Short | Description |
+|--------|-------|-------------|
+| `--config <PATH>` | `-c` | Path to config file (default: `~/.config/loom-ldapbrowser/config.toml`) |
+| `--host <HOST>` | `-H` | LDAP host to connect to (overrides config) |
+| `--port <PORT>` | `-p` | LDAP port (overrides config) |
+| `--bind-dn <DN>` | `-D` | Bind DN (overrides config) |
+| `--base-dn <DN>` | `-b` | Base DN (overrides config) |
+| `--help` | `-h` | Print help information |
+| `--version` | `-V` | Print version |
+
+### Examples
+
+```bash
+# Connect directly to a server
+loom-ldapbrowser -H ldap.example.com -D "cn=admin,dc=example,dc=com" -b "dc=example,dc=com"
+
+# Use custom config file
+loom-ldapbrowser -c /path/to/config.toml
+
+# Override config file host
+loom-ldapbrowser -H ldap-staging.example.com
+```
+
+<Tip>
+  Command-line arguments override the first connection profile in your config file. This is useful for quick connections or testing.
+</Tip>
+
+## Next steps
+
+<Card title="Quick start" icon="rocket" href="/quickstart">
+  Connect to your first LDAP server and start browsing
+</Card>

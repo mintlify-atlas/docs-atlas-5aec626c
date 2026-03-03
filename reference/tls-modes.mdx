@@ -1,0 +1,308 @@
+---
+title: TLS Modes
+description: TLS connection modes for secure LDAP communication including LDAPS, StartTLS, and auto-detection
+---
+
+Loom LDAP Browser supports multiple TLS connection modes to encrypt communication with LDAP servers. The TLS mode is configured per connection profile using the `tls_mode` field.
+
+## Available TLS Modes
+
+Loom supports four TLS modes:
+
+1. **Auto** - Automatically detect the best available encryption
+2. **LDAPS** - TLS on connect (port 636)
+3. **StartTLS** - TLS upgrade on plain LDAP (port 389)
+4. **None** - Plaintext, no encryption
+
+## Auto Mode
+
+The `auto` mode attempts to establish the most secure connection possible by trying methods in order:
+
+1. **LDAPS** on port 636 (or user-specified port)
+2. **StartTLS** on port 389 (or user-specified port)
+3. **Plaintext** as a last resort
+
+```toml
+[[connections]]
+name = "Production"
+host = "ldap.example.com"
+port = 389
+tls_mode = "auto"
+```
+
+### Behavior
+
+- If `port = 389` (default), loom tries LDAPS on port 636 first
+- If a custom port is specified, loom tries LDAPS on that port
+- If LDAPS fails, loom attempts StartTLS on the configured port
+- If StartTLS fails, loom falls back to plaintext (logs a warning)
+
+### Use Cases
+
+- Unknown or mixed-mode server configurations
+- Development and testing environments
+- Automatic migration from plaintext to encrypted connections
+
+<Note>
+  Auto mode is the **recommended default** for most use cases. It maximizes security while maintaining compatibility.
+</Note>
+
+## LDAPS Mode
+
+The `ldaps` mode establishes TLS before any LDAP protocol communication (commonly called "LDAP over SSL"). This is the most common secure LDAP setup.
+
+```toml
+[[connections]]
+name = "Production"
+host = "ldap.example.com"
+port = 636
+tls_mode = "ldaps"
+```
+
+### Standard Ports
+
+- **636** - Standard LDAPS port
+- **3269** - Active Directory Global Catalog LDAPS
+
+### Connection Process
+
+1. TCP connection to server:port
+2. TLS handshake
+3. Certificate verification
+4. LDAP bind and operations over encrypted channel
+
+### Use Cases
+
+- Production LDAP servers with TLS configured
+- Active Directory domains
+- Servers that require encryption from the start
+- When you need explicit encryption validation
+
+### Requirements
+
+- Server must be configured to accept LDAPS connections
+- Valid TLS certificate (or trusted manually)
+- Firewall must allow traffic on LDAPS port
+
+## StartTLS Mode
+
+The `starttls` mode starts with a plaintext LDAP connection on port 389, then upgrades to TLS using the LDAP StartTLS extended operation (RFC 4511).
+
+```toml
+[[connections]]
+name = "Production"
+host = "ldap.example.com"
+port = 389
+tls_mode = "starttls"
+```
+
+### Connection Process
+
+1. TCP connection to server:port
+2. Plaintext LDAP session established
+3. Client sends StartTLS extended operation
+4. TLS handshake
+5. Certificate verification
+6. Remaining LDAP operations over encrypted channel
+
+### Use Cases
+
+- Servers configured for StartTLS (common with OpenLDAP)
+- Environments where port 636 is blocked
+- Legacy systems that support StartTLS but not LDAPS
+
+### Requirements
+
+- Server must support the StartTLS extended operation
+- Valid TLS certificate (or trusted via certificate trust dialog)
+- Firewall must allow traffic on LDAP port (typically 389)
+
+<Warning>
+  StartTLS begins with plaintext communication. While the bind credentials are sent after encryption starts, initial protocol negotiation is visible. Use LDAPS if possible.
+</Warning>
+
+## None Mode
+
+The `none` mode establishes a plaintext LDAP connection with no encryption.
+
+```toml
+[[connections]]
+name = "Development"
+host = "localhost"
+port = 389
+tls_mode = "none"
+```
+
+### Use Cases
+
+- Local development servers (localhost)
+- Testing in isolated environments
+- Legacy servers without TLS support
+- Debugging protocol issues
+
+<Warning>
+  **Do not use plaintext mode over untrusted networks.** Credentials and directory data are transmitted in clear text and can be intercepted.
+</Warning>
+
+## Certificate Verification
+
+When using LDAPS or StartTLS, loom verifies server certificates using:
+
+1. **System certificate store** (webpki + native root certificates)
+2. **Custom trust store** (certificates you've explicitly trusted)
+
+### Certificate Trust Flow
+
+1. Server presents certificate during TLS handshake
+2. Loom checks system trust store (OS root certificates)
+3. If verification fails, loom captures certificate details
+4. User is prompted with certificate information and fingerprint
+5. User can choose:
+   - **Trust Once** (this session only)
+   - **Trust Always** (saved to `[[trusted_certificates]]` in config)
+   - **Reject** (abort connection)
+
+### Trusted Certificates
+
+Permanently trusted certificates are stored in `config.toml`:
+
+```toml
+[[trusted_certificates]]
+host = "ldap.example.com"
+port = 636
+fingerprint_sha256 = "AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89"
+subject = "CN=ldap.example.com"
+```
+
+### Certificate Details
+
+The trust dialog displays:
+- **Subject** - Certificate CN and DN
+- **Issuer** - Certificate authority
+- **Valid from/to** - Certificate validity period
+- **SHA-256 fingerprint** - Unique certificate identifier
+
+<Tip>
+  Verify certificate fingerprints out-of-band (email, phone, documentation) before trusting self-signed or internal CA certificates.
+</Tip>
+
+## TLS Configuration
+
+### Protocol Versions
+
+Loom uses the rustls library and supports:
+- **TLS 1.2**
+- **TLS 1.3**
+
+Older protocols (SSL 3.0, TLS 1.0, TLS 1.1) are not supported for security reasons.
+
+### Cipher Suites
+
+Loom uses modern, secure cipher suites provided by rustls. Weak ciphers (RC4, DES, MD5-based) are not supported.
+
+### Server Name Indication (SNI)
+
+Loom sends the server hostname via SNI during the TLS handshake. This is required for servers hosting multiple domains on a single IP address.
+
+## Troubleshooting
+
+### Connection fails with "certificate verify failed"
+
+**Cause**: Server certificate is not trusted by the system certificate store.
+
+**Solution**: 
+- Verify certificate details in the trust dialog
+- Choose "Trust Once" or "Trust Always" if the certificate is legitimate
+- Install the CA certificate in your system trust store
+- Use a properly signed certificate on the server
+
+### Connection fails with "connection refused" on port 636
+
+**Cause**: Server is not listening on LDAPS port or firewall blocks it.
+
+**Solution**:
+- Verify server LDAPS configuration
+- Check firewall rules: `telnet ldap.example.com 636`
+- Try `tls_mode = "starttls"` instead
+- Use `tls_mode = "auto"` to let loom detect the correct method
+
+### StartTLS fails with "extended operation not supported"
+
+**Cause**: Server does not support StartTLS.
+
+**Solution**:
+- Use `tls_mode = "ldaps"` on port 636
+- Configure StartTLS on the LDAP server
+- Use `tls_mode = "auto"` to try LDAPS automatically
+
+### Certificate shows wrong hostname
+
+**Cause**: Certificate CN/SAN does not match the hostname you're connecting to.
+
+**Solution**:
+- Use the correct hostname in the `host` field
+- Generate a certificate with the correct CN/SAN
+- For testing, trust the certificate (verify fingerprint first)
+
+### Connection fails with "connection timed out"
+
+**Cause**: Network routing issue or firewall blocking.
+
+**Solution**:
+- Check network connectivity: `ping ldap.example.com`
+- Verify port is reachable: `nc -zv ldap.example.com 636`
+- Increase `timeout_secs` in connection profile
+- Check server logs for connection attempts
+
+## Best Practices
+
+1. **Always use encryption** in production (`auto`, `ldaps`, or `starttls`)
+2. **Use LDAPS over StartTLS** when both are available (fewer attack vectors)
+3. **Verify certificate fingerprints** before trusting self-signed certificates
+4. **Use proper CA-signed certificates** on production servers
+5. **Monitor certificate expiration** and renew before expiry
+6. **Use `tls_mode = "auto"`** for maximum compatibility and security
+7. **Set `read_only = true`** on plaintext connections to prevent accidental writes
+
+## Server Configuration Examples
+
+### OpenLDAP with StartTLS
+
+```conf
+# /etc/ldap/slapd.conf or cn=config
+TLSCertificateFile /etc/ssl/certs/ldap.crt
+TLSCertificateKeyFile /etc/ssl/private/ldap.key
+TLSCACertificateFile /etc/ssl/certs/ca.crt
+```
+
+Enable on port 389:
+```bash
+sudo systemctl restart slapd
+```
+
+### OpenLDAP with LDAPS
+
+Add port 636 to systemd service:
+```ini
+# /etc/systemd/system/slapd.service.d/override.conf
+[Service]
+ExecStart=
+ExecStart=/usr/sbin/slapd -h "ldap:/// ldaps:///" -u openldap -g openldap
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart slapd
+```
+
+### Active Directory
+
+Active Directory automatically listens on:
+- Port 636 (LDAPS)
+- Port 3269 (Global Catalog LDAPS)
+
+Install a certificate via:
+- **Certificate MMC snap-in** on the domain controller
+- **Auto-enrollment** from an enterprise CA
+
+Restart the domain controller for changes to take effect.

@@ -1,0 +1,236 @@
+---
+title: Export and Import
+description: Export directory data to multiple formats and import entries from various file types
+---
+
+Loom LDAP Browser supports exporting and importing directory entries in multiple formats. All formats are auto-detected from file extensions.
+
+## Export Formats
+
+### Supported Formats
+
+| Format | Extensions | Description |
+|--------|-----------|-------------|
+| **LDIF** | `.ldif`, `.ldf` | RFC 2849 compliant LDAP Data Interchange Format |
+| **JSON** | `.json` | Array of entry objects with DN and attributes |
+| **CSV** | `.csv` | Comma-separated values with header row |
+| **Excel** | `.xlsx`, `.xls` | Microsoft Excel spreadsheet format |
+
+### Opening the Export Dialog
+
+<Steps>
+  <Step title="Open export dialog">
+    Press `F4` to open the export configuration dialog.
+  </Step>
+  
+  <Step title="Configure export settings">
+    - **Search filter** — LDAP filter to select which entries to export (e.g., `(objectClass=person)`)
+    - **Attributes** — Comma-separated list of attributes, or `*` for all attributes
+    - **Format** — Press `F2` to cycle through LDIF, JSON, CSV, or XLSX
+    - **Filename** — Output file path (format auto-detected from extension)
+  </Step>
+  
+  <Step title="Execute export">
+    Press `Enter` to start the export. The status bar shows the number of entries exported.
+  </Step>
+</Steps>
+
+## Export Format Examples
+
+<Tabs>
+  <Tab title="LDIF">
+    LDIF (LDAP Data Interchange Format) is the standard format for LDAP data. It supports:
+    - Multi-valued attributes
+    - Base64 encoding for non-ASCII values
+    - Line folding for long values
+
+    ```ldif
+    dn: cn=Alice Smith,ou=Users,dc=example,dc=com
+    cn: Alice Smith
+    sn: Smith
+    mail: alice@example.com
+    objectClass: top
+    objectClass: inetOrgPerson
+
+    dn: cn=Bob Jones,ou=Users,dc=example,dc=com
+    cn: Bob Jones
+    sn: Jones
+    mail: bob@example.com
+    objectClass: top
+    objectClass: inetOrgPerson
+    ```
+
+    <Note>
+      Values containing non-ASCII characters, leading spaces, or colons are automatically base64-encoded with the `::` separator.
+    </Note>
+  </Tab>
+  
+  <Tab title="JSON">
+    JSON format exports entries as an array of objects. Each entry contains:
+    - `dn` — Distinguished name string
+    - `attributes` — Object mapping attribute names to arrays of values
+
+    ```json
+    [
+      {
+        "dn": "cn=Alice Smith,ou=Users,dc=example,dc=com",
+        "attributes": {
+          "cn": ["Alice Smith"],
+          "sn": ["Smith"],
+          "mail": ["alice@example.com"],
+          "objectClass": ["top", "inetOrgPerson"]
+        }
+      },
+      {
+        "dn": "cn=Bob Jones,ou=Users,dc=example,dc=com",
+        "attributes": {
+          "cn": ["Bob Jones"],
+          "sn": ["Jones"],
+          "mail": ["bob@example.com"],
+          "objectClass": ["top", "inetOrgPerson"]
+        }
+      }
+    ]
+    ```
+
+    <Info>
+      All attribute values are represented as arrays, even single-valued attributes, for consistency.
+    </Info>
+  </Tab>
+  
+  <Tab title="CSV">
+    CSV format creates a spreadsheet-compatible file with:
+    - First column: `dn` (Distinguished Name)
+    - Subsequent columns: All unique attributes across all entries
+    - Multi-valued attributes joined with `; ` separator
+
+    ```csv
+    dn,cn,sn,mail,objectClass
+    "cn=Alice Smith,ou=Users,dc=example,dc=com",Alice Smith,Smith,alice@example.com,top; inetOrgPerson
+    "cn=Bob Jones,ou=Users,dc=example,dc=com",Bob Jones,Jones,bob@example.com,top; inetOrgPerson
+    ```
+
+    <Note>
+      If you specify explicit attributes (not `*`), only those attributes appear in the order you specified.
+    </Note>
+  </Tab>
+  
+  <Tab title="Excel">
+    Excel format (`.xlsx`) creates a workbook with:
+    - Sheet name: "LDAP Entries"
+    - Header row with bold formatting
+    - DN column with 50-character width
+    - Multi-valued attributes joined with `; ` separator
+
+    The format is identical to CSV but provides native Excel compatibility with formatting and proper column widths.
+
+    <Info>
+      Excel files can be opened directly in Microsoft Excel, LibreOffice Calc, or Google Sheets.
+    </Info>
+  </Tab>
+</Tabs>
+
+## Attribute Selection
+
+Control which attributes are exported and their order:
+
+<CodeGroup>
+```bash All attributes (alphabetical)
+*
+```
+
+```bash Specific attributes (custom order)
+cn,sn,mail,telephoneNumber
+```
+
+```bash Operational attributes
+creatorsName,createTimestamp,modifiersName,modifyTimestamp
+```
+</CodeGroup>
+
+- **`*` (asterisk)** — Export all attributes in alphabetical order
+- **Explicit list** — Export only specified attributes in the given order
+- Attributes not present in an entry are empty in CSV/Excel, omitted in LDIF/JSON
+
+## Import Formats
+
+Import entries from files in any supported format. The format is auto-detected from the file extension.
+
+<Steps>
+  <Step title="Supported import formats">
+    - **LDIF** (`.ldif`, `.ldf`) — RFC 2849 compliant, supports base64 encoding and line folding
+    - **JSON** (`.json`) — Array of entry objects matching the export schema
+    - **CSV** (`.csv`) — Header row with `dn` column plus attribute columns
+    - **Excel** (`.xlsx`, `.xls`) — Spreadsheet with header row
+  </Step>
+  
+  <Step title="Import from profiles layout">
+    Switch to the profiles layout (`F1`) and use the import function to load entries from a file.
+  </Step>
+</Steps>
+
+### LDIF Import Features
+
+- **Line folding** — Handles continuation lines starting with a single space
+- **Base64 decoding** — Automatically decodes `::` base64-encoded values
+- **Comments** — Skips lines starting with `#`
+- **Version directive** — Ignores `version:` line
+- **Multi-valued attributes** — Multiple attribute lines with the same name
+
+### JSON Import Schema
+
+JSON files must contain an array of objects with this structure:
+
+```json
+[
+  {
+    "dn": "cn=Entry Name,dc=example,dc=com",
+    "attributes": {
+      "attributeName": ["value1", "value2"]
+    }
+  }
+]
+```
+
+<Info>
+  All attribute values must be arrays, even for single-valued attributes.
+</Info>
+
+### CSV/Excel Import Format
+
+- **First row** — Header with column names
+- **First column** — Must be named `dn` (case-insensitive)
+- **Other columns** — Attribute names
+- **Multi-valued attributes** — Values separated by `; ` (semicolon + space)
+
+Example CSV structure:
+
+```csv
+dn,cn,sn,mail
+"cn=Alice,dc=example,dc=com",Alice,Smith,alice@example.com
+"cn=Bob,dc=example,dc=com",Bob,Jones,bob@example.com
+```
+
+## Best Practices
+
+<Info>
+  **Format Selection Guide**
+  - **LDIF** — Best for LDAP tools, server imports, and preserving exact data types
+  - **JSON** — Best for programmatic processing and web applications
+  - **CSV** — Best for spreadsheet analysis and simple data extraction
+  - **Excel** — Best for sharing with non-technical users and formatted reports
+</Info>
+
+<Note>
+  When exporting sensitive data, ensure file permissions are properly restricted. Exported files may contain password hashes and other confidential information.
+</Note>
+
+## Keybindings
+
+| Key | Action |
+|-----|--------|
+| `F4` | Open export dialog |
+| `F2` | Cycle export format (in export dialog) |
+| `Tab` / `Shift+Tab` | Navigate fields |
+| `Enter` | Execute export |
+| `Esc` | Cancel and close dialog |

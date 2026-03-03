@@ -1,0 +1,312 @@
+---
+title: Bulk Operations
+description: Apply modifications to multiple entries at once using LDAP search filters
+---
+
+Bulk operations allow you to modify multiple LDAP entries in a single operation. This is useful for mass updates, such as changing attribute values across many users or adding attributes to a group of entries.
+
+## Overview
+
+Bulk update works in two phases:
+1. **Search** — Find all entries matching an LDAP filter
+2. **Modify** — Apply the same modification to each matched entry
+
+Press `F8` to open the bulk update dialog.
+
+<Note>
+  Bulk operations are powerful and can affect many entries at once. Always test your filter with a regular search first to verify which entries will be modified.
+</Note>
+
+## Bulk Update Dialog
+
+The bulk update dialog has four fields:
+
+<Steps>
+  <Step title="Operation Type">
+    Press `F2` to cycle through available operations:
+    - **Replace** — Replace all values of an attribute with a new value
+    - **Add** — Add a value to an attribute (creates if it doesn't exist)
+    - **Delete** — Remove all values of an attribute or a specific value
+  </Step>
+  
+  <Step title="Search Filter">
+    LDAP search filter to select which entries to modify. The filter uses standard LDAP filter syntax.
+
+    Examples:
+    - `(objectClass=person)` — All person entries
+    - `(ou=Engineering)` — All entries in Engineering OU
+    - `(&(objectClass=inetOrgPerson)(!(mail=*)))` — All inetOrgPerson entries without an email
+  </Step>
+  
+  <Step title="Attribute Name">
+    The attribute to modify (e.g., `mail`, `telephoneNumber`, `description`).
+  </Step>
+  
+  <Step title="Value">
+    The value to use for the operation:
+    - **Replace/Add** — The new value to set or add
+    - **Delete** — The specific value to delete (leave empty to delete all values)
+  </Step>
+</Steps>
+
+Press `Enter` to execute the bulk update. Press `Esc` to cancel.
+
+## Operation Types
+
+<Tabs>
+  <Tab title="Replace">
+    ### Replace Attribute
+
+    Replaces all existing values of an attribute with a single new value.
+
+    **Use case:** Standardize attribute values across multiple entries
+
+    **Example:** Set all users' department to "Engineering"
+    ```
+    Operation: Replace
+    Filter: (objectClass=inetOrgPerson)
+    Attribute: ou
+    Value: Engineering
+    ```
+
+    **Result:**
+    - Entries that have `ou: Sales` → `ou: Engineering`
+    - Entries that have `ou: Marketing` → `ou: Engineering`
+    - Entries without `ou` → `ou: Engineering` (created)
+
+    <Info>
+      Replace operations overwrite all existing values. If the attribute had multiple values, they are all removed and replaced with the single new value.
+    </Info>
+  </Tab>
+  
+  <Tab title="Add">
+    ### Add Value
+
+    Adds a value to an attribute. If the attribute doesn't exist, it's created.
+
+    **Use case:** Add additional values to multi-valued attributes
+
+    **Example:** Add a secondary email address
+    ```
+    Operation: Add
+    Filter: (cn=Alice Smith)
+    Attribute: mail
+    Value: alice.smith@example.com
+    ```
+
+    **Result:**
+    - If `mail: alice@example.com` exists → adds second value
+    - Final state: `mail: alice@example.com`, `mail: alice.smith@example.com`
+
+    <Note>
+      If the attribute is single-valued in the schema, the add operation will fail. Check the schema viewer (`F6`) to see if an attribute is single-valued.
+    </Note>
+
+    **Example:** Add object class to entries
+    ```
+    Operation: Add
+    Filter: (&(objectClass=person)(!(objectClass=inetOrgPerson)))
+    Attribute: objectClass
+    Value: inetOrgPerson
+    ```
+  </Tab>
+  
+  <Tab title="Delete">
+    ### Delete Attribute or Value
+
+    Removes an attribute or a specific value from an attribute.
+
+    **Delete all values** (leave Value field empty):
+    ```
+    Operation: Delete
+    Filter: (telephoneNumber=*)
+    Attribute: telephoneNumber
+    Value: [empty]
+    ```
+
+    **Result:** Removes the entire `telephoneNumber` attribute from all matching entries
+
+    **Delete specific value** (provide value):
+    ```
+    Operation: Delete
+    Filter: (objectClass=groupOfNames)
+    Attribute: member
+    Value: cn=John Doe,ou=Users,dc=example,dc=com
+    ```
+
+    **Result:** Removes only that specific member from the group, leaving other members intact
+
+    <Info>
+      When deleting all values, if the attribute is required by the entry's object classes, the operation will fail. Required attributes are listed in the schema viewer's MUST section.
+    </Info>
+  </Tab>
+</Tabs>
+
+## Bulk Update Process
+
+<Steps>
+  <Step title="Search phase">
+    Loom executes a subtree search from the base DN using your filter. All matching entries are collected.
+
+    The search uses the current connection's base DN and searches all subtrees.
+  </Step>
+  
+  <Step title="Modification phase">
+    For each matched entry, Loom applies the modification operation. Operations are executed sequentially.
+
+    - **Success** — Entry is modified and counter incremented
+    - **Failure** — Error is logged with the entry DN and error message
+  </Step>
+  
+  <Step title="Results">
+    After all modifications complete, the status bar shows:
+    - Total entries matched
+    - Number of successful modifications
+    - Number of failed modifications
+
+    Failed modifications are logged in the log panel (`F7`).
+  </Step>
+</Steps>
+
+## Practical Examples
+
+### Example 1: Add Missing Email Addresses
+
+Add email addresses for users who don't have one:
+
+```
+Operation: Add
+Filter: (&(objectClass=inetOrgPerson)(!(mail=*)))
+Attribute: mail
+Value: [manually enter or use another tool]
+```
+
+### Example 2: Update Department
+
+Change department for all users in a specific organizational unit:
+
+```
+Operation: Replace
+Filter: (ou=Sales)
+Attribute: departmentNumber
+Value: 42
+```
+
+### Example 3: Remove Temporary Attribute
+
+Delete a temporary attribute from all entries:
+
+```
+Operation: Delete
+Filter: (tempAttribute=*)
+Attribute: tempAttribute
+Value: [empty]
+```
+
+### Example 4: Add Object Class
+
+Add `posixAccount` object class to all person entries:
+
+```
+Operation: Add
+Filter: (&(objectClass=person)(!(objectClass=posixAccount)))
+Attribute: objectClass
+Value: posixAccount
+```
+
+<Note>
+  After adding `posixAccount`, you'll need to add required attributes like `uidNumber`, `gidNumber`, and `homeDirectory` individually or through another bulk operation.
+</Note>
+
+### Example 5: Remove User from All Groups
+
+Remove a specific user from all groups:
+
+```
+Operation: Delete
+Filter: (objectClass=groupOfNames)
+Attribute: member
+Value: cn=John Doe,ou=Users,dc=example,dc=com
+```
+
+## LDAP Filter Syntax
+
+Bulk operations use standard LDAP search filters:
+
+| Filter | Matches |
+|--------|----------|
+| `(cn=Alice)` | Entries where cn equals "Alice" |
+| `(cn=Alice*)` | Entries where cn starts with "Alice" |
+| `(cn=*Smith)` | Entries where cn ends with "Smith" |
+| `(cn=*ice*)` | Entries where cn contains "ice" |
+| `(!(mail=*))` | Entries without a mail attribute |
+| `(&(objectClass=person)(ou=Sales))` | Person entries in Sales OU |
+| `(\|(cn=Alice)(cn=Bob))` | Entries named Alice OR Bob |
+
+<Info>
+  Test your filter with the regular search function (`F9`) before using it in a bulk operation to verify which entries will be affected.
+</Info>
+
+## Safety and Best Practices
+
+<Note>
+  **Before executing bulk updates:**
+  1. Test your search filter to see which entries match
+  2. Check if the attribute is required or single-valued in the schema
+  3. Consider making a backup export of affected entries
+  4. Start with a narrow filter and expand gradually
+  5. Use read-only mode if you want to prevent accidental modifications
+</Note>
+
+### Read-Only Mode
+
+Enable read-only mode in your connection profile to prevent bulk modifications:
+
+```toml
+[[connections]]
+name = "Production (Read-Only)"
+host = "ldap.example.com"
+read_only = true
+```
+
+With read-only mode enabled, bulk update operations are blocked.
+
+### Logging
+
+All bulk operations are logged. Press `F7` to view the log panel and see:
+- Which entries were modified
+- Which entries failed and why
+- Full error messages for troubleshooting
+
+### Error Handling
+
+Common errors during bulk operations:
+
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "Constraint violation" | Adding a required attribute is missing, or single-valued attribute has multiple values | Check schema and ensure all requirements are met |
+| "No such attribute" | Deleting an attribute that doesn't exist | Use filter `(attributeName=*)` to only match entries that have the attribute |
+| "Object class violation" | Removing a required attribute | Check MUST attributes in schema viewer |
+| "Insufficient access" | Insufficient permissions | Use an account with write access |
+
+## Keybindings
+
+| Key | Action |
+|-----|--------|
+| `F8` | Open bulk update dialog |
+| `F2` | Cycle operation type (Replace/Add/Delete) |
+| `Tab` / `Shift+Tab` | Navigate fields |
+| `Enter` | Execute bulk update |
+| `Esc` | Cancel and close dialog |
+
+## Implementation Details
+
+<Info>
+  **Under the hood:**
+  
+  Bulk updates are implemented using the LDAP `modify` operation. Each entry is modified individually, which means:
+  - Operations are not atomic across all entries
+  - Partial success is possible (some entries succeed, others fail)
+  - The operation continues even if some modifications fail
+  - All results are reported at the end
+</Info>

@@ -1,0 +1,231 @@
+---
+title: Schema Viewer
+description: Browse and inspect LDAP schema definitions including object classes and attribute types
+---
+
+The schema viewer provides a comprehensive view of your LDAP server's schema, including object classes, attribute types, and their relationships.
+
+## Opening the Schema Viewer
+
+Press `F6` to open the schema viewer. The viewer loads the schema from the LDAP server and displays it in an interactive interface.
+
+<Note>
+  Schema is automatically loaded when you connect to an LDAP server. The viewer discovers the schema from standard locations including `cn=Subschema` and `cn=schema`.
+</Note>
+
+## Schema Tabs
+
+The schema viewer has two tabs that you can switch between using `Tab`:
+
+<Tabs>
+  <Tab title="Object Classes">
+    ### Object Classes Tab
+
+    Displays all object classes defined in the schema with the following information:
+
+    - **Name** — Object class name (e.g., `person`, `inetOrgPerson`, `organizationalUnit`)
+    - **OID** — Object identifier (e.g., `2.5.6.6`)
+    - **Kind** — Class type:
+      - **Structural** — Defines the basic structure of an entry
+      - **Abstract** — Template for other classes (e.g., `top`)
+      - **Auxiliary** — Additional attributes that can be added
+    - **Superior** — Parent object class in the inheritance chain
+    - **MUST attributes** — Required attributes for this class
+    - **MAY attributes** — Optional attributes for this class
+
+    #### Inheritance Resolution
+
+    The schema viewer automatically resolves inheritance chains. When viewing an object class, you see:
+    - Attributes directly defined in the class
+    - Attributes inherited from superior classes
+    - The complete flattened attribute set
+
+    Example inheritance chain:
+    ```
+    top (abstract)
+      ↓
+    person (structural)
+      MUST: cn, sn
+      MAY: userPassword, telephoneNumber
+      ↓
+    inetOrgPerson (structural)
+      MAY: mail, uid, displayName
+      (inherits cn, sn, userPassword, telephoneNumber from person)
+    ```
+
+    <Info>
+      When you create or edit entries, Loom uses the schema to validate attribute names and suggest available attributes based on the entry's object classes.
+    </Info>
+  </Tab>
+  
+  <Tab title="Attribute Types">
+    ### Attribute Types Tab
+
+    Shows all attribute type definitions with detailed information:
+
+    - **Name** — Attribute name and aliases (e.g., `cn`, `commonName`)
+    - **OID** — Attribute type identifier
+    - **Description** — Human-readable description from the schema
+    - **Syntax** — Data type and format:
+      - **DirectoryString** — UTF-8 text (most common)
+      - **String** — ASCII text
+      - **Integer** — Numeric values
+      - **Boolean** — TRUE/FALSE values
+      - **DN** — Distinguished name references
+      - **OctetString** — Binary data
+      - **GeneralizedTime** — Timestamps
+      - **TelephoneNumber** — Phone number format
+      - **Oid** — Object identifier
+    - **Single-value** — Whether the attribute can have multiple values
+    - **No user modification** — Whether users can edit this attribute
+
+    #### Attribute Syntax Mapping
+
+    Loom maps LDAP syntax OIDs to friendly names:
+
+    | Syntax OID | Type | Example Attributes |
+    |-----------|------|--------------------|
+    | `1.3.6.1.4.1.1466.115.121.1.15` | DirectoryString | `cn`, `description`, `displayName` |
+    | `1.3.6.1.4.1.1466.115.121.1.27` | Integer | `uidNumber`, `gidNumber` |
+    | `1.3.6.1.4.1.1466.115.121.1.7` | Boolean | `accountEnabled` |
+    | `1.3.6.1.4.1.1466.115.121.1.12` | DN | `member`, `manager`, `owner` |
+    | `1.3.6.1.4.1.1466.115.121.1.24` | GeneralizedTime | `createTimestamp`, `modifyTimestamp` |
+
+    <Note>
+      Attributes marked as "no user modification" (like `createTimestamp`, `modifyTimestamp`) are automatically filtered out when you add attributes to entries.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Navigation and Search
+
+<Steps>
+  <Step title="Browse schema">
+    - `j` / `k` or arrow keys — Scroll through the list
+    - `Tab` — Switch between Object Classes and Attribute Types tabs
+    - `g` / `Home` — Jump to the top
+    - `G` / `End` — Jump to the bottom
+  </Step>
+  
+  <Step title="Filter entries">
+    Press `/` to open the filter input. Type to search by name. The list updates in real-time as you type.
+    
+    Examples:
+    - `person` — Find all object classes or attributes with "person" in the name
+    - `mail` — Find mail-related attributes
+    - `posix` — Find POSIX account attributes
+  </Step>
+  
+  <Step title="View details">
+    Select any object class or attribute type to view its full definition in the detail panel, including:
+    - Complete OID
+    - Description
+    - All inherited attributes (for object classes)
+    - Syntax and constraints (for attribute types)
+  </Step>
+  
+  <Step title="Close viewer">
+    Press `q` or `Esc` to close the schema viewer and return to the browser.
+  </Step>
+</Steps>
+
+## Schema Discovery
+
+Loom automatically discovers the schema from your LDAP server using these methods:
+
+<Steps>
+  <Step title="Query subschema DN">
+    Loom first queries the root DSE for the `subschemaSubentry` attribute, which points to the schema entry.
+  </Step>
+  
+  <Step title="Try fallback locations">
+    If the subschema DN is not found, Loom tries standard locations:
+    - `cn=Subschema` (OpenLDAP, 389 Directory Server)
+    - `cn=schema` (Active Directory, OpenDJ)
+  </Step>
+  
+  <Step title="Parse schema definitions">
+    Loom parses the `attributeTypes` and `objectClasses` attributes from the schema entry, following RFC 4512 format.
+  </Step>
+</Steps>
+
+<Info>
+  Schema loading happens automatically when you connect. If schema discovery fails, Loom logs the error but continues to operate with a minimal default schema.
+</Info>
+
+## Using Schema Information
+
+The schema is integrated throughout Loom's interface:
+
+### When Adding Attributes
+
+When you press `a` in the detail panel to add an attribute:
+- Loom shows only attributes allowed by the entry's object classes
+- Attributes are filtered based on MUST and MAY lists
+- Operational attributes (no user modification) are excluded
+- The list includes all inherited attributes from superior classes
+
+### When Editing Attributes
+
+For DN-valued attributes (like `member`, `manager`, `owner`):
+- Loom enables DN search mode
+- You can search for entries by name and select them
+- The full DN is automatically inserted
+
+### Single-Valued Attributes
+
+When editing single-valued attributes:
+- Loom prevents adding multiple values
+- The `+` (add value) action is disabled
+- Attempting to add a second value shows an error
+
+## Example Object Class Definition
+
+Here's how the `inetOrgPerson` class appears in the schema viewer:
+
+```
+Name: inetOrgPerson
+OID: 2.16.840.1.113730.3.2.2
+Kind: Structural
+Superior: organizationalPerson
+
+MUST attributes:
+  cn, sn, objectClass (inherited from person and top)
+
+MAY attributes:
+  audio, businessCategory, carLicense, departmentNumber,
+  displayName, employeeNumber, employeeType, givenName,
+  homePhone, homePostalAddress, initials, jpegPhoto,
+  labeledURI, mail, manager, mobile, o, pager,
+  photo, roomNumber, secretary, uid, userCertificate,
+  x500uniqueIdentifier, preferredLanguage, userSMIMECertificate,
+  userPKCS12
+  (plus inherited: description, seeAlso, telephoneNumber,
+   userPassword, etc.)
+```
+
+## Keybindings
+
+| Key | Action |
+|-----|--------|
+| `F6` | Open schema viewer |
+| `Tab` | Switch between Object Classes and Attribute Types |
+| `j` / `k` | Scroll up/down |
+| `/` | Filter by name |
+| `g` / `Home` | Jump to top |
+| `G` / `End` | Jump to bottom |
+| `q` / `Esc` | Close schema viewer |
+
+## Common Object Classes
+
+<Info>
+  **Standard LDAP Object Classes**
+  - **top** — Abstract base class for all entries
+  - **person** — Basic person entry with cn and sn
+  - **organizationalPerson** — Person with organizational attributes
+  - **inetOrgPerson** — Internet person with email and uid
+  - **posixAccount** — Unix/Linux account with uidNumber and gidNumber
+  - **groupOfNames** — Group entry with member attribute
+  - **organizationalUnit** — Organizational unit container
+  - **domain** — Domain component entry
+</Info>

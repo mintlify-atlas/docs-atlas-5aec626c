@@ -1,0 +1,376 @@
+---
+title: Command-Line Options
+description: Complete reference for loom-ldapbrowser command-line flags and options
+---
+
+Loom LDAP Browser accepts command-line arguments to override configuration, connect directly to servers, and manage the encrypted vault.
+
+## Synopsis
+
+```bash
+loom-ldapbrowser [OPTIONS]
+```
+
+## Options
+
+<ParamField path="-c, --config" type="string">
+  Path to configuration file.
+  
+  Default: `~/.config/loom-ldapbrowser/config.toml`
+  
+  Example:
+  ```bash
+  loom-ldapbrowser --config /etc/loom/custom-config.toml
+  ```
+</ParamField>
+
+<ParamField path="-H, --host" type="string">
+  LDAP server hostname or IP address.
+  
+  When specified, loom creates a temporary connection profile and connects immediately. This overrides the first profile in the config file.
+  
+  Example:
+  ```bash
+  loom-ldapbrowser -H ldap.example.com
+  ```
+</ParamField>
+
+<ParamField path="-p, --port" type="integer">
+  LDAP server port.
+  
+  Default: `389`
+  
+  Only used when `--host` is specified.
+  
+  Example:
+  ```bash
+  loom-ldapbrowser -H ldap.example.com -p 636
+  ```
+</ParamField>
+
+<ParamField path="-D, --bind-dn" type="string">
+  Bind distinguished name (DN).
+  
+  The DN to authenticate as when connecting. Only used when `--host` is specified.
+  
+  Example:
+  ```bash
+  loom-ldapbrowser -H ldap.example.com -D "cn=admin,dc=example,dc=com"
+  ```
+</ParamField>
+
+<ParamField path="-b, --base-dn" type="string">
+  Base DN for browsing and searching.
+  
+  The root of the directory tree displayed in the browser. Only used when `--host` is specified.
+  
+  Example:
+  ```bash
+  loom-ldapbrowser -H ldap.example.com -b "dc=example,dc=com"
+  ```
+</ParamField>
+
+<ParamField path="--vault-password" type="string">
+  Vault master password.
+  
+  Provides the vault master password via command-line argument, avoiding the interactive prompt. Only used when `vault_enabled = true` in the config.
+  
+  Example:
+  ```bash
+  loom-ldapbrowser --vault-password "masterpassword"
+  ```
+  
+  <Warning>
+    The password will be visible in shell history and process listings. Use `LOOM_VAULT_PASSWORD` environment variable instead for better security.
+  </Warning>
+</ParamField>
+
+<ParamField path="--vault" type="string">
+  Path to vault file.
+  
+  Default: `~/.config/loom-ldapbrowser/vault.dat`
+  
+  Example:
+  ```bash
+  loom-ldapbrowser --vault /secure/location/vault.dat
+  ```
+</ParamField>
+
+<ParamField path="-h, --help" type="boolean">
+  Print help information and exit.
+  
+  Example:
+  ```bash
+  loom-ldapbrowser --help
+  ```
+</ParamField>
+
+<ParamField path="-V, --version" type="boolean">
+  Print version information and exit.
+  
+  Example:
+  ```bash
+  loom-ldapbrowser --version
+  ```
+</ParamField>
+
+## Connection Override Behavior
+
+When you specify `--host` (with optional `-p`, `-D`, `-b`), loom:
+
+1. Creates a temporary connection profile with these parameters
+2. Sets `tls_mode = "auto"` (tries LDAPS, StartTLS, then plaintext)
+3. Sets `credential_method = "prompt"` (prompts for password)
+4. Inserts this profile as the first connection in the config
+5. Automatically connects on startup
+
+### Example: Quick Ad-Hoc Connection
+
+```bash
+loom-ldapbrowser \
+  -H ldap.example.com \
+  -D "cn=admin,dc=example,dc=com" \
+  -b "dc=example,dc=com"
+```
+
+This is equivalent to creating a profile:
+
+```toml
+[[connections]]
+name = "ldap.example.com"
+host = "ldap.example.com"
+port = 389
+tls_mode = "auto"
+bind_dn = "cn=admin,dc=example,dc=com"
+base_dn = "dc=example,dc=com"
+credential_method = "prompt"
+```
+
+## Environment Variables
+
+These environment variables work alongside command-line options:
+
+<ParamField path="LOOM_PASSWORD" type="string">
+  Bind password for `credential_method = "prompt"`.
+  
+  When set, loom uses this password instead of prompting interactively.
+  
+  Example:
+  ```bash
+  export LOOM_PASSWORD="secretpassword"
+  loom-ldapbrowser -H ldap.example.com -D "cn=admin,dc=example,dc=com"
+  ```
+</ParamField>
+
+<ParamField path="LOOM_VAULT_PASSWORD" type="string">
+  Vault master password.
+  
+  When set, loom uses this password to unlock the vault instead of prompting.
+  
+  Example:
+  ```bash
+  export LOOM_VAULT_PASSWORD="masterpassword"
+  loom-ldapbrowser
+  ```
+  
+  <Tip>
+    Prefer `LOOM_VAULT_PASSWORD` over `--vault-password` flag. Environment variables don't appear in shell history or process listings as easily.
+  </Tip>
+</ParamField>
+
+## Usage Examples
+
+### Connect to a Server with CLI Arguments
+
+```bash
+loom-ldapbrowser -H ldap.example.com -D "cn=admin,dc=example,dc=com" -b "dc=example,dc=com"
+```
+
+Loom prompts for the bind password and connects.
+
+### Connect to LDAPS Port
+
+```bash
+loom-ldapbrowser -H ldaps.example.com -p 636
+```
+
+Connects to port 636 (LDAPS) with auto TLS mode.
+
+### Connect with Password from Environment
+
+```bash
+export LOOM_PASSWORD="secretpassword"
+loom-ldapbrowser -H ldap.example.com -D "cn=admin,dc=example,dc=com" -b "dc=example,dc=com"
+```
+
+No interactive password prompt.
+
+### Use Custom Config File
+
+```bash
+loom-ldapbrowser --config ~/my-ldap-config.toml
+```
+
+Loads profiles and settings from a non-default location.
+
+### Launch with Saved Profiles
+
+```bash
+loom-ldapbrowser
+```
+
+Loom reads `~/.config/loom-ldapbrowser/config.toml` and:
+- Connects to the first profile automatically (if configured)
+- Shows the profiles layout if no profiles exist
+- Prompts for vault password if `vault_enabled = true`
+
+### Open Vault with Command-Line Password
+
+```bash
+loom-ldapbrowser --vault-password "masterpassword"
+```
+
+Unlocks vault without interactive prompt.
+
+### Use Alternate Vault File
+
+```bash
+loom-ldapbrowser --vault /mnt/secure/my-vault.dat --vault-password "masterpassword"
+```
+
+Uses a vault file from a different location (e.g., encrypted filesystem, network mount).
+
+### Check Version
+
+```bash
+loom-ldapbrowser --version
+```
+
+Outputs:
+```
+loom-ldapbrowser 0.1.0
+```
+
+### Show Help
+
+```bash
+loom-ldapbrowser --help
+```
+
+Displays usage information and all available options.
+
+## Combining with Saved Profiles
+
+Command-line arguments override the **first** connection profile in `config.toml`. Other profiles remain available in the profiles layout (`F1`).
+
+### Example
+
+Config file:
+```toml
+[[connections]]
+name = "Production"
+host = "ldap-prod.example.com"
+
+[[connections]]
+name = "Staging"
+host = "ldap-staging.example.com"
+```
+
+Command:
+```bash
+loom-ldapbrowser -H ldap-dev.example.com
+```
+
+Result:
+- Loom connects to `ldap-dev.example.com` (from CLI)
+- "Production" and "Staging" profiles are available in `F1` profiles layout
+- CLI connection appears as first tab
+
+## Exit Codes
+
+| Code | Meaning |
+|------|----------|
+| `0` | Success (normal exit) |
+| `1` | General error (connection failed, config invalid, etc.) |
+| `130` | Interrupted by Ctrl+C |
+
+## Shell Integration
+
+### Bash Alias
+
+```bash
+# ~/.bashrc
+alias ldap='loom-ldapbrowser -H ldap.example.com -D "cn=admin,dc=example,dc=com" -b "dc=example,dc=com"'
+```
+
+Now `ldap` launches loom with your common connection parameters.
+
+### ZSH Completion
+
+Loom uses clap for argument parsing. Generate shell completions:
+
+```bash
+# Generate completions (requires building from source with completion feature)
+loom-ldapbrowser --generate-completions zsh > ~/.zsh/completions/_loom-ldapbrowser
+```
+
+<Note>
+  Shell completion generation is a planned feature. Currently not available in release builds.
+</Note>
+
+## Systemd Service
+
+You can run loom as a background service for monitoring or automation (non-interactive mode is planned).
+
+```ini
+# /etc/systemd/system/loom-ldap-monitor.service
+[Unit]
+Description=Loom LDAP Browser Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=ldapuser
+Environment="LOOM_PASSWORD=secretpassword"
+ExecStart=/usr/local/bin/loom-ldapbrowser --config /etc/loom/monitor.toml
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
+```
+
+<Warning>
+  Loom is a TUI application requiring a terminal. Headless/daemon mode is not currently supported.
+</Warning>
+
+## Debugging
+
+### Verbose Logging
+
+Loom logs to `./logs/loom-ldapbrowser.log` by default. Set the log level in config:
+
+```toml
+[general]
+log_level = "debug"
+```
+
+Or via environment variable:
+
+```bash
+RUST_LOG=debug loom-ldapbrowser
+```
+
+### Trace LDAP Operations
+
+```bash
+RUST_LOG=loom_core=trace loom-ldapbrowser
+```
+
+This logs all LDAP protocol operations (search, bind, modify, etc.).
+
+## Security Considerations
+
+- **Command-line arguments** are visible in process listings (`ps aux`)
+- **Avoid passing passwords** via `--vault-password`; use environment variables or interactive prompts
+- **Shell history** may record commands with passwords; use `HISTCONTROL=ignorespace` and prefix commands with a space
+- **Use config files** for production deployments instead of CLI arguments

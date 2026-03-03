@@ -1,0 +1,531 @@
+---
+title: "Searching with LDAP Filters"
+description: "Search your LDAP directory using powerful LDAP filter syntax with live results"
+---
+
+Loom provides a built-in search feature that lets you find entries anywhere in your directory using LDAP filter syntax.
+
+## Quick Start
+
+<Steps>
+  <Step title="Open Search">
+    Press `F9` or `/` to focus the search input at the bottom of the screen.
+  </Step>
+
+  <Step title="Enter Filter">
+    Type an LDAP filter using standard syntax:
+
+    ```ldap
+    (objectClass=person)
+    ```
+  </Step>
+
+  <Step title="Execute Search">
+    Press `Enter` to execute the search.
+    
+    Results appear in a popup overlay showing all matching entries.
+  </Step>
+
+  <Step title="Navigate to Entry">
+    Use `j`/`k` or arrow keys to select a result, then press `Enter` to jump to that entry in the tree.
+  </Step>
+</Steps>
+
+<Info>
+Searches are performed starting from your configured base DN and include all subtree entries.
+</Info>
+
+## LDAP Filter Syntax
+
+LDAP filters use a prefix notation with parentheses. Here's the basic syntax:
+
+### Simple Filters
+
+<Tabs>
+  <Tab title="Equality">
+    Match an exact attribute value:
+
+    ```ldap
+    (cn=Alice)
+    ```
+
+    Finds entries where `cn` equals "Alice".
+  </Tab>
+
+  <Tab title="Presence">
+    Check if an attribute exists:
+
+    ```ldap
+    (mail=*)
+    ```
+
+    Finds entries that have a `mail` attribute (any value).
+  </Tab>
+
+  <Tab title="Substring">
+    Match part of a value:
+
+    ```ldap
+    (cn=Alice*)
+    ```
+
+    Finds entries where `cn` starts with "Alice".
+
+    **Wildcard positions:**
+    - `(cn=Alice*)` - Starts with "Alice"
+    - `(cn=*Smith)` - Ends with "Smith"
+    - `(cn=*Alice*)` - Contains "Alice"
+    - `(cn=*Alice*Smith*)` - Multiple wildcards
+  </Tab>
+
+  <Tab title="Comparison">
+    Greater than or less than:
+
+    ```ldap
+    (uidNumber>=1000)
+    ```
+
+    Finds entries where `uidNumber` is 1000 or greater.
+
+    **Operators:**
+    - `>=` - Greater than or equal
+    - `<=` - Less than or equal
+
+    <Note>
+    Comparison operators work with numeric and string attributes, but behavior depends on the attribute's syntax defined in the schema.
+    </Note>
+  </Tab>
+</Tabs>
+
+### Compound Filters
+
+Combine multiple conditions with logical operators:
+
+<Tabs>
+  <Tab title="AND (&)">
+    All conditions must be true:
+
+    ```ldap
+    (&(objectClass=inetOrgPerson)(mail=*@example.com))
+    ```
+
+    Finds entries that are both `inetOrgPerson` **and** have an email at `example.com`.
+
+    **Multiple conditions:**
+    ```ldap
+    (&(objectClass=person)(cn=Alice*)(ou=engineering))
+    ```
+  </Tab>
+
+  <Tab title="OR (|)">
+    Any condition can be true:
+
+    ```ldap
+    (|(cn=Alice)(cn=Bob))
+    ```
+
+    Finds entries where `cn` is "Alice" **or** "Bob".
+
+    **Multiple conditions:**
+    ```ldap
+    (|(department=sales)(department=marketing)(department=support))
+    ```
+  </Tab>
+
+  <Tab title="NOT (!)">
+    Negates a condition:
+
+    ```ldap
+    (!(objectClass=organizationalUnit))
+    ```
+
+    Finds entries that are **not** organizational units.
+
+    **Combined with AND:**
+    ```ldap
+    (&(objectClass=person)(!(mail=*)))
+    ```
+    
+    Finds people without an email address.
+  </Tab>
+</Tabs>
+
+### Nested Filters
+
+Combine operators for complex queries:
+
+```ldap
+(&(objectClass=person)(|(department=engineering)(department=qa))(!(disabled=TRUE)))
+```
+
+This finds:
+- Entries that are persons **AND**
+- In engineering **OR** QA **AND**
+- Not disabled
+
+<Tip>
+Nested filters can be hard to read. Break complex queries into smaller tests, then combine them once you've verified each part works.
+</Tip>
+
+## Common Search Examples
+
+<AccordionGroup>
+  <Accordion title="Find all people">
+    ```ldap
+    (objectClass=person)
+    ```
+
+    Or more specifically:
+    ```ldap
+    (objectClass=inetOrgPerson)
+    ```
+  </Accordion>
+
+  <Accordion title="Find users by name">
+    **Exact match:**
+    ```ldap
+    (cn=Alice Smith)
+    ```
+
+    **Starts with:**
+    ```ldap
+    (cn=Alice*)
+    ```
+
+    **Contains:**
+    ```ldap
+    (cn=*Smith*)
+    ```
+  </Accordion>
+
+  <Accordion title="Find users by email domain">
+    ```ldap
+    (mail=*@example.com)
+    ```
+
+    **Multiple domains:**
+    ```ldap
+    (|(mail=*@example.com)(mail=*@example.org))
+    ```
+  </Accordion>
+
+  <Accordion title="Find groups">
+    ```ldap
+    (objectClass=groupOfNames)
+    ```
+
+    Or for POSIX groups:
+    ```ldap
+    (objectClass=posixGroup)
+    ```
+  </Accordion>
+
+  <Accordion title="Find group members">
+    **User is member of a group:**
+    ```ldap
+    (memberOf=cn=admins,ou=groups,dc=example,dc=com)
+    ```
+
+    **Group contains a user:**
+    ```ldap
+    (member=uid=alice,ou=users,dc=example,dc=com)
+    ```
+  </Accordion>
+
+  <Accordion title="Find organizational units">
+    ```ldap
+    (objectClass=organizationalUnit)
+    ```
+
+    **By name:**
+    ```ldap
+    (&(objectClass=organizationalUnit)(ou=engineering))
+    ```
+  </Accordion>
+
+  <Accordion title="Find entries with specific attributes">
+    **Has phone number:**
+    ```ldap
+    (telephoneNumber=*)
+    ```
+
+    **Missing email:**
+    ```ldap
+    (&(objectClass=person)(!(mail=*)))
+    ```
+  </Accordion>
+
+  <Accordion title="Find POSIX accounts in UID range">
+    ```ldap
+    (&(objectClass=posixAccount)(uidNumber>=1000)(uidNumber<=2000))
+    ```
+  </Accordion>
+
+  <Accordion title="Find recently modified entries">
+    ```ldap
+    (modifyTimestamp>=20240101000000Z)
+    ```
+
+    <Note>
+    Timestamp format is `YYYYMMDDHHMMSSz`. Requires the server to maintain `modifyTimestamp` operational attribute.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Find all entries">
+    ```ldap
+    (objectClass=*)
+    ```
+
+    <Warning>
+    This returns **every entry** under the base DN. Use with caution on large directories.
+    </Warning>
+  </Accordion>
+</AccordionGroup>
+
+## Search Results Interface
+
+When search results appear, you'll see a popup with:
+
+```
+┌─ Search: (objectClass=person) (42 results) ─────────┐
+│                                                      │
+│  cn=Alice Smith,ou=users,dc=example,dc=com          │
+│  cn=Bob Jones,ou=users,dc=example,dc=com            │
+│  cn=Carol White,ou=users,dc=example,dc=com          │
+│  ...                                                 │
+│                                                      │
+│  ↑/↓:navigate  Enter:go to entry  e:edit filter  q:close
+└──────────────────────────────────────────────────────┘
+```
+
+### Results Navigation
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` / `↓` / `↑` | Navigate results |
+| `PageDown` / `PageUp` | Jump 10 results |
+| `Home` / `End` | Jump to first/last result |
+| `Enter` | Go to selected entry in tree |
+| `e` | Edit filter and search again |
+| `Esc` / `q` | Close results |
+
+<Tip>
+Press `Enter` on a result to jump to that entry in the tree panel. The tree will automatically expand to show the entry's location.
+</Tip>
+
+## Search Scope
+
+### Base DN
+
+Searches start from your configured base DN and include all subtree entries:
+
+```toml
+base_dn = "dc=example,dc=com"
+```
+
+Finds entries under `dc=example,dc=com` and all children.
+
+<Info>
+To search a specific subtree, you can temporarily change your base DN in the connection dialog or create a dedicated profile.
+</Info>
+
+### Attribute Selection
+
+By default, searches return all user attributes. Some operational attributes (like `createTimestamp`, `modifyTimestamp`) may require explicit request.
+
+<Note>
+The search results popup shows DNs only. Select an entry to view full attributes in the detail panel.
+</Note>
+
+## Performance Tips
+
+<AccordionGroup>
+  <Accordion title="Use specific filters">
+    Narrow your search with specific object classes:
+
+    **Slower:**
+    ```ldap
+    (cn=Alice*)
+    ```
+
+    **Faster:**
+    ```ldap
+    (&(objectClass=person)(cn=Alice*))
+    ```
+
+    Adding `objectClass` helps the server use indexes.
+  </Accordion>
+
+  <Accordion title="Avoid leading wildcards">
+    Leading wildcards prevent index usage:
+
+    **Slower:**
+    ```ldap
+    (cn=*Smith)
+    ```
+
+    **Faster:**
+    ```ldap
+    (cn=Smith*)
+    ```
+
+    If you must search for endings, consider using substring searches sparingly.
+  </Accordion>
+
+  <Accordion title="Use indexed attributes">
+    Search on attributes that are indexed by the server:
+
+    **Common indexed attributes:**
+    - `cn` (common name)
+    - `uid` (user ID)
+    - `mail` (email)
+    - `objectClass`
+
+    Check with your LDAP administrator which attributes are indexed.
+  </Accordion>
+
+  <Accordion title="Limit search scope">
+    For large directories, use a more specific base DN:
+
+    Instead of:
+    ```toml
+    base_dn = "dc=example,dc=com"
+    ```
+
+    Use:
+    ```toml
+    base_dn = "ou=users,dc=example,dc=com"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Active Directory Specific
+
+### Common AD Filters
+
+<Tabs>
+  <Tab title="Users">
+    ```ldap
+    (&(objectCategory=person)(objectClass=user))
+    ```
+
+    Active Directory uses `objectCategory` for better performance.
+  </Tab>
+
+  <Tab title="Computers">
+    ```ldap
+    (objectClass=computer)
+    ```
+  </Tab>
+
+  <Tab title="Groups">
+    ```ldap
+    (objectClass=group)
+    ```
+  </Tab>
+
+  <Tab title="Enabled accounts">
+    ```ldap
+    (&(objectClass=user)(!(userAccountControl:1.2.840.113556.1.4.803:=2)))
+    ```
+
+    Uses bitwise AND filter to check if account is enabled.
+  </Tab>
+</Tabs>
+
+### AD Attribute Names
+
+Active Directory uses different attribute names:
+
+| Standard LDAP | Active Directory |
+|---------------|------------------|
+| `uid` | `sAMAccountName` |
+| `mail` | `mail` (same) |
+| `cn` | `cn` (same) |
+| `member` | `member` (same) |
+| `memberOf` | `memberOf` (same) |
+
+**Example:**
+```ldap
+(sAMAccountName=alice)
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="No results found">
+    If your search returns no results:
+    
+    - Verify your filter syntax is correct (balanced parentheses)
+    - Check that attribute names are spelled correctly
+    - Ensure the base DN includes the entries you're looking for
+    - Test with a simple filter like `(objectClass=*)` to verify connectivity
+  </Accordion>
+
+  <Accordion title="Search timeout">
+    If searches timeout:
+    
+    - Narrow your filter to reduce the number of matches
+    - Increase `timeout_secs` in your connection profile
+    - Check server load and network latency
+    - Consider if the filter can use indexes better
+  </Accordion>
+
+  <Accordion title="Invalid filter error">
+    Common syntax errors:
+    
+    - **Missing parentheses:** `cn=Alice` → `(cn=Alice)`
+    - **Unbalanced parens:** `(&(cn=Alice)(mail=*))` ✓
+    - **Wrong operator:** Use `&` not `&&`, `|` not `||`
+    - **Escaping:** Use backslash for special chars: `(cn=user\(test\))`
+  </Accordion>
+
+  <Accordion title="Incomplete results">
+    If you expected more results:
+    
+    - Check your base DN scope
+    - Verify you have permission to see those entries
+    - Some servers limit result size (check `page_size`)
+    - Try a more general filter to test
+  </Accordion>
+</AccordionGroup>
+
+## Special Characters
+
+Escape these characters in filter values:
+
+| Character | Escape Sequence |
+|-----------|----------------|
+| `*` | `\2a` |
+| `(` | `\28` |
+| `)` | `\29` |
+| `\` | `\5c` |
+| NUL | `\00` |
+
+**Example:**
+```ldap
+(cn=user\28test\29)
+```
+
+Searches for `cn` value "user(test)".
+
+<Note>
+For wildcards in substring searches, use literal `*` without escaping.
+</Note>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Editing Entries" icon="pen-to-square" href="/guide/editing-entries">
+    Modify search results or create new entries
+  </Card>
+  <Card title="Browsing" icon="folder-tree" href="/guide/browsing">
+    Navigate the directory tree
+  </Card>
+  <Card title="Schema Viewer" icon="book" href="/features/schema-viewer">
+    View object classes and attribute types
+  </Card>
+  <Card title="Export" icon="download" href="/features/export-import">
+    Export search results to files
+  </Card>
+</CardGroup>

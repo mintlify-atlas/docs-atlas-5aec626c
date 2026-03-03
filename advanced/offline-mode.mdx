@@ -1,0 +1,343 @@
+---
+title: 'Offline Demo Mode'
+description: 'Use an in-memory demo directory for testing and demonstrations without an LDAP server'
+---
+
+## Overview
+
+Loom LDAP Browser includes an **offline demo mode** that provides a fully functional in-memory LDAP directory. This is perfect for:
+
+- Testing the application without an LDAP server
+- Demonstrating features in presentations or tutorials
+- Developing and testing UI changes
+- Learning LDAP concepts in a safe sandbox
+
+<Info>
+  Offline mode is implemented in `loom-core/src/offline.rs` and provides a complete mock LDAP directory with realistic sample data.
+</Info>
+
+---
+
+## Enabling Offline Mode
+
+### In Configuration File
+
+Add `offline = true` to any connection profile in `~/.config/loom-ldapbrowser/config.toml`:
+
+```toml
+[[connections]]
+name = "Demo Directory"
+host = "localhost"
+port = 389
+base_dn = "dc=example,dc=org"
+offline = true
+```
+
+<Steps>
+  <Step title="Edit config.toml">
+    Open your configuration file:
+
+    ```bash
+    vim ~/.config/loom-ldapbrowser/config.toml
+    ```
+  </Step>
+
+  <Step title="Add offline profile">
+    Add a connection with `offline = true`. The `host` and `port` values are ignored in offline mode, but should be provided for consistency.
+  </Step>
+
+  <Step title="Launch the application">
+    Start Loom LDAP Browser:
+
+    ```bash
+    loom-ldapbrowser
+    ```
+
+    The demo directory will be available immediately without any network connection.
+  </Step>
+</Steps>
+
+### From Connection Dialog
+
+You can also enable offline mode when creating a new connection:
+
+<Steps>
+  <Step title="Open connection dialog">
+    Press `F2` to open the connection dialog.
+  </Step>
+
+  <Step title="Create new connection">
+    Fill in basic connection details. The actual host and port don't matter for offline mode.
+  </Step>
+
+  <Step title="Enable offline mode">
+    Toggle the "Offline" field to `true` (implementation may vary depending on the UI).
+  </Step>
+
+  <Step title="Connect">
+    Press `Enter` to connect. The in-memory directory will be loaded instantly.
+  </Step>
+</Steps>
+
+---
+
+## Demo Directory Structure
+
+The offline demo directory contains realistic sample data resembling a typical organization's LDAP setup:
+
+```
+dc=example,dc=org
+├── ou=people
+│   ├── cn=Alice Anderson
+│   ├── cn=Bob Builder
+│   ├── cn=Carol Chen
+│   └── cn=David Davis
+├── ou=groups
+│   ├── cn=admins
+│   ├── cn=developers
+│   └── cn=users
+└── ou=systems
+    ├── cn=app-server-01
+    └── cn=db-server-01
+```
+
+### Sample Entries
+
+<AccordionGroup>
+  <Accordion title="People (ou=people)">
+    User entries with typical `inetOrgPerson` and `posixAccount` attributes:
+
+    ```ldif
+    dn: cn=Alice Anderson,ou=people,dc=example,dc=org
+    objectClass: inetOrgPerson
+    objectClass: posixAccount
+    cn: Alice Anderson
+    sn: Anderson
+    givenName: Alice
+    mail: alice@example.org
+    uid: alice
+    uidNumber: 1001
+    gidNumber: 1001
+    homeDirectory: /home/alice
+    userPassword: {SSHA}...
+    ```
+  </Accordion>
+
+  <Accordion title="Groups (ou=groups)">
+    Group entries with member references:
+
+    ```ldif
+    dn: cn=developers,ou=groups,dc=example,dc=org
+    objectClass: groupOfNames
+    cn: developers
+    description: Software development team
+    member: cn=Alice Anderson,ou=people,dc=example,dc=org
+    member: cn=Bob Builder,ou=people,dc=example,dc=org
+    ```
+  </Accordion>
+
+  <Accordion title="Systems (ou=systems)">
+    System and device entries:
+
+    ```ldif
+    dn: cn=app-server-01,ou=systems,dc=example,dc=org
+    objectClass: device
+    objectClass: ipHost
+    cn: app-server-01
+    description: Production application server
+    ipHostNumber: 10.0.1.100
+    serialNumber: SRV-APP-001
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Supported Operations
+
+Offline mode supports **all major LDAP operations**, making it ideal for testing:
+
+<CardGroup cols={2}>
+  <Card title="Search" icon="magnifying-glass">
+    Full filter support including complex boolean filters. Uses in-memory filtering that mimics real LDAP behavior.
+  </Card>
+  <Card title="Modify" icon="pen">
+    Add, replace, and delete attributes. Changes are stored in memory for the session.
+  </Card>
+  <Card title="Add" icon="plus">
+    Create new entries under any branch. Schema validation is applied.
+  </Card>
+  <Card title="Delete" icon="trash">
+    Remove entries from the directory. Subtree deletion is supported.
+  </Card>
+  <Card title="Schema" icon="diagram-project">
+    Browse object classes and attribute types from a built-in schema subset.
+  </Card>
+  <Card title="Export/Import" icon="file-arrow-down">
+    Export to LDIF, JSON, CSV, XLSX formats. Import is fully functional.
+  </Card>
+</CardGroup>
+
+<Note>
+  All modifications in offline mode are **session-only** and stored in memory. When you disconnect or quit the application, changes are lost.
+</Note>
+
+---
+
+## Use Cases
+
+### Testing UI Changes
+
+When developing new features or modifying the UI, offline mode lets you test without affecting a real LDAP server:
+
+```bash
+# Edit source code
+vim crates/loom-tui/src/components/detail_panel.rs
+
+# Rebuild and test with offline mode
+cargo build
+loom-ldapbrowser  # Connect to offline profile
+```
+
+### Demonstrating Features
+
+For presentations, tutorials, or screenshots, offline mode provides consistent, realistic data:
+
+<CodeGroup>
+```toml Demo Config
+[[connections]]
+name = "Demo"
+host = "localhost"
+base_dn = "dc=example,dc=org"
+offline = true
+
+[general]
+theme = "dark"
+```
+
+```bash Launch Demo
+loom-ldapbrowser -H localhost -b "dc=example,dc=org"
+```
+</CodeGroup>
+
+### Learning LDAP
+
+New users can explore LDAP concepts without setting up a server:
+
+- Navigate the directory tree structure
+- Experiment with LDAP filters (e.g., `(objectClass=person)`, `(uid=alice*)`)
+- Practice attribute editing
+- Test bulk updates safely
+- Export data to understand LDIF format
+
+---
+
+## Limitations
+
+<Warning>
+  Offline mode has some intentional limitations compared to a real LDAP server:
+</Warning>
+
+| Feature | Offline Mode | Real LDAP |
+|---------|--------------|----------|
+| **Persistence** | ❌ Memory only | ✅ Persistent storage |
+| **Concurrency** | ❌ Single session | ✅ Multi-client |
+| **Replication** | ❌ Not available | ✅ Multi-master |
+| **Complex ACLs** | ❌ No access control | ✅ Full ACL support |
+| **Referrals** | ❌ Not supported | ✅ Supported |
+| **Partial Schema** | ⚠️ Limited object classes | ✅ Full schema |
+
+### Schema Limitations
+
+The offline demo includes a **subset** of common object classes:
+
+- `top`, `person`, `organizationalPerson`, `inetOrgPerson`
+- `posixAccount`, `posixGroup`
+- `groupOfNames`, `groupOfUniqueNames`
+- `organizationalUnit`, `organization`, `domain`
+- `device`, `ipHost`
+
+Custom schema extensions used in your production environment won't be available in offline mode.
+
+---
+
+## Implementation Details
+
+Offline mode is implemented in `loom-core/src/offline.rs` as an in-memory LDAP backend:
+
+```rust
+pub struct OfflineConnection {
+    base_dn: String,
+    entries: HashMap<String, LdapEntry>,
+    schema: SchemaCache,
+}
+
+impl OfflineConnection {
+    pub fn new(base_dn: String) -> Self {
+        let mut conn = Self {
+            base_dn,
+            entries: HashMap::new(),
+            schema: SchemaCache::default(),
+        };
+        conn.populate_sample_data();
+        conn
+    }
+
+    pub async fn search(
+        &self,
+        base: &str,
+        filter: &str,
+        scope: SearchScope,
+    ) -> Result<Vec<LdapEntry>> {
+        // In-memory filter matching
+        let parsed_filter = parse_filter(filter)?;
+        self.entries
+            .values()
+            .filter(|e| self.matches_scope(e, base, scope))
+            .filter(|e| self.matches_filter(e, &parsed_filter))
+            .cloned()
+            .collect()
+    }
+}
+```
+
+<Info>
+  The implementation uses the same `LdapEntry` types as the real connection, ensuring consistent behavior between offline and online modes.
+</Info>
+
+---
+
+## Switching Between Offline and Online
+
+You can run both offline and online connections **simultaneously** using tabs:
+
+<Steps>
+  <Step title="Connect to offline profile">
+    Start with an offline connection (auto-connects if it's the first profile in config.toml).
+  </Step>
+
+  <Step title="Open new tab">
+    Press `Ctrl+t` or use the connection dialog (`F2`) to open a new tab.
+  </Step>
+
+  <Step title="Connect to real LDAP server">
+    Select a non-offline profile. The real LDAP connection will open in a new tab.
+  </Step>
+
+  <Step title="Switch between tabs">
+    Use `Ctrl+Right`/`Ctrl+Left` or `gt`/`gT` to switch between offline and online connections.
+  </Step>
+</Steps>
+
+This is useful for comparing configurations or testing migrations.
+
+---
+
+## Resetting Demo Data
+
+Since offline mode is memory-only, simply **disconnect and reconnect** to reset the demo directory to its initial state:
+
+1. Close the tab with `Ctrl+w`
+2. Reconnect via `F2` or relaunch the application
+
+All modifications made during the session will be discarded.

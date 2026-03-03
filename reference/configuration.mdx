@@ -1,0 +1,257 @@
+---
+title: Configuration Reference
+description: Complete config.toml reference for Loom LDAP Browser with all available settings and options
+---
+
+Loom LDAP Browser reads its configuration from `~/.config/loom-ldapbrowser/config.toml`. This file contains connection profiles, keybindings, theme settings, and other preferences.
+
+## Configuration File Location
+
+The default configuration file is located at:
+
+- **Linux/macOS**: `~/.config/loom-ldapbrowser/config.toml`
+- **Windows**: `%APPDATA%\loom-ldapbrowser\config.toml`
+
+You can override this location using the `-c` or `--config` command-line flag.
+
+## Full Configuration Example
+
+```toml
+[general]
+theme = "dark"
+tick_rate_ms = 250
+log_level = "info"
+autocomplete = true
+live_search = true
+vault_enabled = false
+
+[keybindings]
+quit = "Ctrl+q"
+force_quit = "Ctrl+c"
+focus_next = "Tab"
+focus_prev = "Shift+Tab"
+show_connect_dialog = "F2"
+search = "F9"
+show_export_dialog = "F4"
+show_bulk_update = "F8"
+show_schema_viewer = "F6"
+show_help = "F5"
+toggle_log_panel = "F7"
+save_connection = "F10"
+switch_to_profiles = "F1"
+next_tab = "Ctrl+Right"
+prev_tab = "Ctrl+Left"
+close_tab = "Ctrl+w"
+
+[[connections]]
+name = "Production"
+host = "ldap.example.com"
+port = 389
+tls_mode = "auto"
+bind_dn = "cn=admin,dc=example,dc=com"
+base_dn = "dc=example,dc=com"
+credential_method = "prompt"
+page_size = 500
+timeout_secs = 30
+relax_rules = false
+read_only = false
+folder = "Production"
+
+[[connections]]
+name = "Staging"
+host = "ldap-staging.internal"
+port = 636
+tls_mode = "ldaps"
+bind_dn = "cn=readonly,dc=staging,dc=com"
+base_dn = "dc=staging,dc=com"
+credential_method = "keychain"
+folder = "Production/Staging"
+
+[[folders]]
+path = "Production"
+description = "Production LDAP servers -- handle with care"
+
+[[trusted_certificates]]
+host = "ldap.example.com"
+port = 636
+fingerprint_sha256 = "AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89"
+subject = "CN=ldap.example.com"
+```
+
+## General Settings
+
+The `[general]` section contains application-wide settings.
+
+<ParamField path="theme" type="string" default="dark">
+  Theme name. Built-in options: `dark`, `light`, `solarized`, `nord`, `matrix`. You can also create custom themes in `~/.config/loom-ldapbrowser/themes/`.
+</ParamField>
+
+<ParamField path="tick_rate_ms" type="integer" default="250">
+  UI refresh rate in milliseconds. Lower values make the interface more responsive but use more CPU.
+</ParamField>
+
+<ParamField path="log_level" type="string" default="info">
+  Logging verbosity. Options: `trace`, `debug`, `info`, `warn`, `error`.
+</ParamField>
+
+<ParamField path="autocomplete" type="boolean" default="true">
+  Enable autocomplete suggestions for DN-valued attributes when editing entries.
+</ParamField>
+
+<ParamField path="live_search" type="boolean" default="true">
+  Enable live search results as you type in the search input.
+</ParamField>
+
+<ParamField path="vault_enabled" type="boolean" default="false">
+  Enable the encrypted vault for storing credentials. When enabled, loom prompts for a master password on startup.
+</ParamField>
+
+## Connection Profiles
+
+Connection profiles are defined using `[[connections]]` array blocks. Each profile represents a saved LDAP server configuration.
+
+### Required Fields
+
+<ParamField path="name" type="string" required>
+  Display name for the connection profile. This appears in the profiles list and tab bar.
+</ParamField>
+
+<ParamField path="host" type="string" required>
+  LDAP server hostname or IP address.
+</ParamField>
+
+### Optional Fields
+
+<ParamField path="port" type="integer" default="389">
+  LDAP server port. Common ports are 389 (LDAP), 636 (LDAPS), and 3268/3269 (Active Directory Global Catalog).
+</ParamField>
+
+<ParamField path="tls_mode" type="string" default="auto">
+  TLS connection mode. See [TLS Modes](/reference/tls-modes) for details.
+  
+  Options:
+  - `auto` - Try LDAPS, fall back to StartTLS, then plaintext
+  - `ldaps` - LDAPS (TLS on connect) on port 636
+  - `starttls` - StartTLS upgrade on port 389
+  - `none` - Plaintext, no encryption
+</ParamField>
+
+<ParamField path="bind_dn" type="string">
+  Distinguished Name to bind as. Leave empty for anonymous bind.
+</ParamField>
+
+<ParamField path="base_dn" type="string">
+  Base DN for browsing and searching. This is the root of the directory tree displayed in the browser.
+</ParamField>
+
+<ParamField path="credential_method" type="string" default="prompt">
+  How to obtain the bind password. See [Credentials](/reference/credentials) for details.
+  
+  Options:
+  - `prompt` - Interactive password prompt
+  - `command` - Execute a shell command
+  - `keychain` - Use OS keychain (macOS Keychain, GNOME Keyring, Windows Credential Manager)
+  - `vault` - Use encrypted vault (requires `vault_enabled = true`)
+</ParamField>
+
+<ParamField path="password_command" type="string">
+  Shell command to execute when `credential_method = "command"`. The command's stdout (trimmed) is used as the password.
+  
+  Example: `"pass show ldap/prod"`
+</ParamField>
+
+<ParamField path="page_size" type="integer" default="500">
+  LDAP paged results control size. Larger values fetch more entries per request but may cause timeouts on slow servers.
+</ParamField>
+
+<ParamField path="timeout_secs" type="integer" default="30">
+  Connection and operation timeout in seconds.
+</ParamField>
+
+<ParamField path="relax_rules" type="boolean" default="false">
+  Send the LDAP Relax Rules control with modify/delete operations. This bypasses some server-side schema validation and is useful with directory plugins that enforce strict constraints.
+</ParamField>
+
+<ParamField path="read_only" type="boolean" default="false">
+  When `true`, prevents all write operations (add, modify, delete) on this connection. Useful for production servers.
+</ParamField>
+
+<ParamField path="folder" type="string">
+  Folder path for organizing profiles in the profiles tree. Use `/` as a separator for nested folders.
+  
+  Example: `"Production/US-East"`
+</ParamField>
+
+<ParamField path="offline" type="boolean" default="false">
+  When `true`, uses an in-memory demo directory instead of connecting to a real server. Useful for testing and demonstrations.
+</ParamField>
+
+## Folders
+
+The `[[folders]]` array defines folder descriptions displayed in the profiles layout.
+
+<ParamField path="path" type="string" required>
+  Folder path matching the `folder` field in connection profiles.
+</ParamField>
+
+<ParamField path="description" type="string">
+  Description text displayed when the folder is selected.
+</ParamField>
+
+Example:
+
+```toml
+[[folders]]
+path = "Production"
+description = "Production LDAP servers -- read-only access recommended"
+
+[[folders]]
+path = "Production/US-East"
+description = "US East region servers"
+```
+
+## Trusted Certificates
+
+The `[[trusted_certificates]]` array stores permanently trusted TLS certificate fingerprints. This is populated automatically when you choose "Trust Always" in the certificate trust dialog.
+
+<ParamField path="host" type="string" required>
+  Hostname of the server.
+</ParamField>
+
+<ParamField path="port" type="integer" required>
+  Port number.
+</ParamField>
+
+<ParamField path="fingerprint_sha256" type="string" required>
+  SHA-256 fingerprint of the certificate in colon-separated hex format.
+</ParamField>
+
+<ParamField path="subject" type="string" required>
+  Certificate subject DN for display purposes.
+</ParamField>
+
+<Warning>
+  Certificate fingerprints are stored in plaintext. Only trust certificates from servers you control or verify independently.
+</Warning>
+
+## Keybindings
+
+The `[keybindings]` section allows customization of global keyboard shortcuts. See [Keybindings](/reference/keybindings) for the complete reference.
+
+## Environment Variables
+
+Loom LDAP Browser respects the following environment variables:
+
+- `LOOM_PASSWORD` - Default bind password when `credential_method = "prompt"`
+- `LOOM_VAULT_PASSWORD` - Vault master password (avoids interactive prompt)
+
+## Config Validation
+
+Loom validates the configuration on startup. Common errors:
+
+- **Duplicate connection names** - Each profile must have a unique `name`
+- **Invalid TLS mode** - Must be one of: `auto`, `ldaps`, `starttls`, `none`
+- **Invalid credential method** - Must be one of: `prompt`, `command`, `keychain`, `vault`
+- **Missing password_command** - Required when `credential_method = "command"`
+
+If the configuration file is missing or invalid, loom uses default settings and marks the session as first launch.

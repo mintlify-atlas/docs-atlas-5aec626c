@@ -1,80 +1,310 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get up and running with Loom LDAP Browser in minutes
 ---
 
-## Get started in three steps
+Get connected to your LDAP server and start browsing in just a few steps.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
+- Loom LDAP Browser installed (see [Installation](/installation))
+- Access to an LDAP server (host, credentials, and base DN)
+- Or use offline demo mode for testing
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+## Connect to your LDAP server
 
-### Step 2: Deploy your changes
+<Tabs>
+  <Tab title="Connection dialog (recommended)">
+    Perfect for first-time users and managing multiple servers.
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    <Steps>
+      <Step title="Launch Loom LDAP Browser">
+        ```bash
+        loom-ldapbrowser
+        ```
+      </Step>
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+      <Step title="Open the connection dialog">
+        Press `F2` to open the connection dialog.
+      </Step>
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+      <Step title="Enter connection details">
+        Fill in the required fields:
+        - **Host**: Your LDAP server hostname (e.g., `ldap.example.com`)
+        - **Port**: `389` for LDAP, `636` for LDAPS
+        - **Bind DN**: Your authentication DN (e.g., `cn=admin,dc=example,dc=com`)
+        - **Base DN**: Starting point for browsing (e.g., `dc=example,dc=com`)
+        - **TLS Mode**: `auto` (recommended), `ldaps`, `starttls`, or `none`
+      </Step>
 
-### Step 3: Go live
+      <Step title="Enter your password">
+        When prompted, enter your bind password. The password is not saved unless you explicitly save the profile.
+      </Step>
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+      <Step title="Start browsing">
+        Once connected, the directory tree appears in the left panel. Navigate with arrow keys or vim-style `j/k/h/l`.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Command line">
+    Quick one-off connections without saving configuration.
+
+    ```bash
+    loom-ldapbrowser -H ldap.example.com \
+      -D "cn=admin,dc=example,dc=com" \
+      -b "dc=example,dc=com"
+    ```
+
+    You'll be prompted for your password unless you set the `LOOM_PASSWORD` environment variable:
+
+    ```bash
+    export LOOM_PASSWORD='your-password'
+    loom-ldapbrowser -H ldap.example.com -D "cn=admin,dc=example,dc=com" -b "dc=example,dc=com"
+    ```
+  </Tab>
+
+  <Tab title="Config file">
+    Save connection profiles for repeated use.
+
+    <Steps>
+      <Step title="Create config file">
+        Create `~/.config/loom-ldapbrowser/config.toml`:
+
+        ```toml
+        [general]
+        theme = "dark"
+
+        [[connections]]
+        name = "My LDAP Server"
+        host = "ldap.example.com"
+        port = 389
+        tls_mode = "auto"
+        bind_dn = "cn=admin,dc=example,dc=com"
+        base_dn = "dc=example,dc=com"
+        credential_method = "prompt"
+        ```
+      </Step>
+
+      <Step title="Launch">
+        ```bash
+        loom-ldapbrowser
+        ```
+
+        The first profile in your config file connects automatically.
+      </Step>
+    </Steps>
+  </Tab>
+
+  <Tab title="Offline demo">
+    Try Loom LDAP Browser without a real server.
+
+    <Steps>
+      <Step title="Create config with offline mode">
+        ```toml
+        [[connections]]
+        name = "Demo"
+        host = "localhost"
+        offline = true
+        ```
+      </Step>
+
+      <Step title="Launch">
+        ```bash
+        loom-ldapbrowser
+        ```
+
+        Explore a pre-populated demo directory with sample users and groups.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Browse the directory
+
+Once connected, you'll see the directory tree in the left panel and entry details in the right panel.
+
+### Navigate the tree
+
+| Key | Action |
+|-----|--------|
+| `j` or `↓` | Move down |
+| `k` or `↑` | Move up |
+| `l` or `→` or `Enter` | Expand node / view entry |
+| `h` or `←` | Collapse node |
+
+<Tip>The tree loads children lazily — only when you expand a node.</Tip>
+
+### View entry details
+
+When you select an entry in the tree, all its attributes appear in the detail panel on the right:
+
+- Navigate attributes with `j/k` or arrow keys
+- Press `e` or `Enter` to edit an attribute value
+- Press `a` to add a new attribute
+- Press `d` to delete an attribute value
+
+## Search for entries
+
+<Steps>
+  <Step title="Focus the search input">
+    Press `F9` or `/` to focus the command panel at the bottom.
+  </Step>
+
+  <Step title="Enter an LDAP filter">
+    Type an LDAP search filter, for example:
+
+    ```
+    (cn=john*)
+    ```
+
+    This finds all entries where the `cn` attribute starts with "john".
+  </Step>
+
+  <Step title="Press Enter">
+    Results appear in a popup. Use `j/k` to navigate and `Enter` to jump to an entry in the tree.
+  </Step>
+</Steps>
+
+### Common search filters
+
+| Filter | Description |
+|--------|-------------|
+| `(objectClass=person)` | All person entries |
+| `(cn=Alice*)` | Entries where cn starts with "Alice" |
+| `(mail=*@example.com)` | Entries with email ending in @example.com |
+| `(&(objectClass=inetOrgPerson)(mail=*))` | All inetOrgPerson entries with an email |
+| `(\|(cn=Alice)(cn=Bob))` | Entries where cn is Alice OR Bob |
+
+See [Searching](/guide/searching) for the complete LDAP filter syntax.
+
+## Edit an entry
+
+<Steps>
+  <Step title="Select an entry">
+    Navigate to an entry in the tree and press `Enter` or `l`.
+  </Step>
+
+  <Step title="Navigate to the attribute">
+    In the detail panel, use `j/k` to move to the attribute you want to edit.
+  </Step>
+
+  <Step title="Press e to edit">
+    An editor opens. Modify the value and press `Enter` to save, or `Esc` to cancel.
+  </Step>
+</Steps>
+
+<Note>Changes are sent to the LDAP server immediately. There is no undo — the change is applied to the live directory.</Note>
+
+## Create a new entry
+
+<Steps>
+  <Step title="Select the parent entry">
+    Navigate to the entry that will be the parent of your new entry.
+  </Step>
+
+  <Step title="Press a in the tree panel">
+    A dialog opens prompting for:
+    - **RDN**: Relative Distinguished Name (e.g., `cn=NewUser`)
+    - **Object classes**: Comma-separated (e.g., `inetOrgPerson,posixAccount`)
+    - **Extra attributes**: Optional comma-separated `attr=value` pairs
+  </Step>
+
+  <Step title="Fill in the details and press Enter">
+    The new entry is created and appears in the tree.
+  </Step>
+</Steps>
+
+## Export data
+
+<Steps>
+  <Step title="Press F4">
+    Opens the export dialog.
+  </Step>
+
+  <Step title="Configure export">
+    - **Filter**: LDAP search filter (e.g., `(objectClass=person)`)
+    - **Attributes**: Comma-separated list or `*` for all
+    - **Format**: LDIF, JSON, CSV, or XLSX (press `F2` to cycle)
+    - **Filename**: Path to save (extension determines format)
+  </Step>
+
+  <Step title="Press Enter">
+    Data matching the filter is exported to the file.
+  </Step>
+</Steps>
+
+## View schema
+
+Press `F6` to open the schema viewer. This shows:
+
+- **Object Classes**: Structural, abstract, and auxiliary classes with their MUST and MAY attributes
+- **Attribute Types**: All attribute types with their syntax and single-value flag
+
+Navigate with `j/k`, switch tabs with `Tab`, and filter by name with `/`.
+
+## Essential keybindings
+
+| Key | Action |
+|-----|--------|
+| `F1` | Switch to profiles layout |
+| `F2` | Connection dialog |
+| `F4` | Export dialog |
+| `F5` or `?` | Help overlay |
+| `F6` | Schema viewer |
+| `F7` | Toggle log panel |
+| `F8` | Bulk update dialog |
+| `F9` or `/` | Focus search input |
+| `Tab` | Next panel |
+| `Shift+Tab` | Previous panel |
+| `Ctrl+Q` | Quit |
+
+See [Keybindings](/reference/keybindings) for the complete reference.
 
 ## Next steps
 
-Now that you have your docs running, explore these key features:
-
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="User guide" icon="book" href="/guide/connecting">
+    Learn all the features in depth
+  </Card>
+  <Card title="Configuration" icon="gear" href="/reference/configuration">
+    Customize config.toml and keybindings
+  </Card>
+  <Card title="Authentication" icon="key" href="/guide/authentication">
+    Set up password managers and keychains
+  </Card>
+  <Card title="Export & import" icon="file-export" href="/features/export-import">
+    Work with LDIF, JSON, CSV, and XLSX
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## Advanced features
+
+### Credential management
+
+Instead of entering your password every time, configure one of these methods:
+
+- **Command**: Execute a shell command (e.g., `pass`, `op`, `gpg`)
+- **Keychain**: Use your OS keychain (macOS Keychain, GNOME Keyring, Windows Credential Manager)
+- **Vault**: Encrypted vault with master password
+
+See [Authentication](/guide/authentication) for setup instructions.
+
+### Bulk updates
+
+Press `F8` to open the bulk update dialog. Apply a single modification to all entries matching a filter:
+
+- **Replace**: Set an attribute to a new value
+- **Add**: Add a value to an attribute
+- **Delete**: Remove an attribute or specific value
+
+See [Bulk Operations](/features/bulk-operations) for examples.
+
+### Multi-tab workflows
+
+Press `Ctrl+Right` or `gt` to open a new tab. Each tab is an independent LDAP connection. Switch between tabs with `Ctrl+Left`/`Ctrl+Right` or `gT`/`gt`.
+
+Use this to:
+- Compare entries across different servers
+- Test changes in staging before applying to production
+- Work with multiple base DNs simultaneously

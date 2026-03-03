@@ -1,0 +1,335 @@
+---
+title: "Connecting to LDAP Servers"
+description: "Learn how to connect to LDAP servers using CLI arguments, the connection dialog, and saved profiles"
+---
+
+There are several ways to connect to an LDAP server with Loom LDAP Browser. Choose the method that best fits your workflow.
+
+## Connection Methods
+
+<Steps>
+  <Step title="Command-Line Arguments">
+    Connect directly on startup by passing connection parameters:
+
+    ```bash
+    loom-ldapbrowser -H ldap.example.com \
+      -D "cn=admin,dc=example,dc=com" \
+      -b "dc=example,dc=com"
+    ```
+
+    ### Available CLI Options
+
+    | Option | Description |
+    |--------|-------------|
+    | `-H, --host <HOST>` | LDAP server hostname |
+    | `-p, --port <PORT>` | LDAP port (default: 389) |
+    | `-D, --bind-dn <DN>` | Bind DN for authentication |
+    | `-b, --base-dn <DN>` | Base DN for browsing |
+    | `-c, --config <PATH>` | Custom config file path |
+
+    <Info>
+    CLI arguments override the first connection profile in your config file.
+    </Info>
+  </Step>
+
+  <Step title="Connection Dialog">
+    Press `F2` at any time to open the connection dialog.
+
+    From here you can:
+    - Select from saved connection profiles
+    - Create a new connection
+    - Edit connection parameters before connecting
+
+    ### Dialog Navigation
+
+    | Key | Action |
+    |-----|--------|
+    | `Tab` / `Shift+Tab` | Move between fields |
+    | `e` | Enter edit mode (from view mode) |
+    | `c` | Connect with current settings |
+    | `F2` | Cycle TLS mode (edit mode) |
+    | `F3` | Cycle credential method (edit mode) |
+    | `F10` / `Ctrl+Enter` | Save profile (edit mode) |
+    | `Esc` | Cancel and close |
+
+    <Tip>
+    When you're viewing an existing profile, press `e` to edit its fields, or press `c` to connect immediately.
+    </Tip>
+  </Step>
+
+  <Step title="Profiles Layout">
+    Press `F1` to switch to the profiles layout, where you can:
+    - Browse all saved connection profiles
+    - Organize profiles into folders
+    - Connect to a profile by pressing `c`
+
+    Navigate the profiles tree with vim-style keys (`j`/`k`) or arrow keys, then press `c` to connect to the selected profile.
+
+    See [Connection Profiles](/guide/profiles) for detailed information about managing profiles.
+  </Step>
+
+  <Step title="Auto-Connect on Startup">
+    The first profile in your `config.toml` file will connect automatically when you launch the application (unless overridden by CLI arguments).
+
+    ```toml
+    [[connections]]
+    name = "Production"
+    host = "ldap.example.com"
+    bind_dn = "cn=admin,dc=example,dc=com"
+    base_dn = "dc=example,dc=com"
+    ```
+
+    <Warning>
+    If you don't want auto-connect, leave the `[[connections]]` section empty or pass `-H` without a value on the command line.
+    </Warning>
+  </Step>
+</Steps>
+
+## Connection Parameters
+
+When creating or editing a connection, you'll configure these fields:
+
+### Required Fields
+
+<Tabs>
+  <Tab title="Host">
+    The LDAP server hostname or IP address.
+
+    **Examples:**
+    - `ldap.example.com`
+    - `ldap-prod.internal`
+    - `192.168.1.100`
+  </Tab>
+
+  <Tab title="Port">
+    The LDAP port number.
+
+    **Default values:**
+    - `389` for standard LDAP or StartTLS
+    - `636` for LDAPS (LDAP over TLS)
+
+    <Info>
+    When using TLS mode "auto", the application will try port 636 first, then fall back to StartTLS on port 389.
+    </Info>
+  </Tab>
+
+  <Tab title="Bind DN">
+    The Distinguished Name to authenticate as.
+
+    **Examples:**
+    - `cn=admin,dc=example,dc=com`
+    - `uid=readonly,ou=users,dc=example,dc=com`
+    - Leave empty for anonymous bind
+
+    <Note>
+    Some LDAP servers (like Active Directory) may require a full user principal name like `admin@example.com` instead of a DN.
+    </Note>
+  </Tab>
+
+  <Tab title="Base DN">
+    The starting point for directory browsing and searches.
+
+    **Examples:**
+    - `dc=example,dc=com`
+    - `ou=users,dc=example,dc=com`
+    - `o=organization`
+
+    The tree panel will show entries starting from this DN.
+  </Tab>
+</Tabs>
+
+### Optional Fields
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| **TLS Mode** | `auto` | Encryption method (see below) |
+| **Credential Method** | `prompt` | How to obtain password (see [Authentication](/guide/authentication)) |
+| **Page Size** | `500` | Number of entries to fetch per page |
+| **Timeout** | `30` | Connection timeout in seconds |
+| **Relax Rules** | `false` | Relax LDAP protocol rules for compatibility |
+| **Read Only** | `false` | Prevent all modifications |
+| **Folder** | _(none)_ | Folder path for organization |
+
+## TLS Modes
+
+Loom supports multiple TLS encryption modes:
+
+<Tabs>
+  <Tab title="auto (Recommended)">
+    Automatically negotiates the best encryption method:
+
+    1. Try LDAPS on port 636
+    2. Fall back to StartTLS on port 389
+    3. Fall back to plaintext if both fail
+
+    ```toml
+    tls_mode = "auto"
+    ```
+
+    <Tip>
+    Use "auto" mode for maximum compatibility. It will always use encryption when available.
+    </Tip>
+  </Tab>
+
+  <Tab title="ldaps">
+    LDAPS (LDAP over TLS) - TLS encryption from the start of the connection.
+
+    ```toml
+    tls_mode = "ldaps"
+    port = 636
+    ```
+
+    Typically used on port 636.
+  </Tab>
+
+  <Tab title="starttls">
+    StartTLS - Begin with plaintext, then upgrade to TLS.
+
+    ```toml
+    tls_mode = "starttls"
+    port = 389
+    ```
+
+    Typically used on port 389.
+  </Tab>
+
+  <Tab title="none">
+    No encryption (plaintext only).
+
+    ```toml
+    tls_mode = "none"
+    ```
+
+    <Warning>
+    Only use "none" mode on trusted networks or for testing. Credentials will be sent in plaintext.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Password Prompts
+
+When a connection uses `credential_method = "prompt"`, you'll be prompted for the bind password:
+
+- **Before TUI starts:** If connecting on startup, you'll see a terminal prompt
+- **In the TUI:** If opening a new connection, a password dialog appears
+
+### Skip the Prompt
+
+Set the `LOOM_PASSWORD` environment variable to provide the password automatically:
+
+```bash
+export LOOM_PASSWORD="your-password"
+loom-ldapbrowser -H ldap.example.com -D "cn=admin,dc=example,dc=com"
+```
+
+<Warning>
+Exporting passwords in environment variables is not secure. Consider using the "command" or "keychain" credential methods instead.
+</Warning>
+
+## Anonymous Bind
+
+To connect anonymously (without authentication), leave the **Bind DN** field empty:
+
+```bash
+loom-ldapbrowser -H ldap.example.com -b "dc=example,dc=com"
+```
+
+Or in your config:
+
+```toml
+[[connections]]
+name = "Anonymous"
+host = "ldap.example.com"
+base_dn = "dc=example,dc=com"
+# bind_dn is omitted
+```
+
+<Note>
+Many LDAP servers restrict what anonymous users can see. You may have limited access to directory entries.
+</Note>
+
+## Multiple Connections
+
+Loom supports multiple simultaneous connections through tabs:
+
+- Each tab represents an independent LDAP connection
+- Press `Ctrl+Right` or type `gt` to go to the next tab
+- Press `Ctrl+Left` or type `gT` to go to the previous tab
+- Press `Ctrl+W` to close the current tab
+
+### Opening Multiple Tabs
+
+1. Connect to your first server (any method)
+2. Press `F2` to open the connection dialog again
+3. Select a different profile or enter new connection details
+4. Connect to create a new tab
+
+<Tip>
+Use the tab bar at the top to see all open connections. The active tab is highlighted.
+</Tip>
+
+## Connection Status
+
+The status bar at the bottom shows:
+
+- Current connection name or hostname
+- Detected server type (OpenLDAP, Active Directory, etc.)
+- Key hints for common operations
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Connection timeout">
+    If the connection times out:
+    
+    - Verify the hostname and port are correct
+    - Check if a firewall is blocking the connection
+    - Try increasing the `timeout_secs` value
+    - Test connectivity with: `telnet ldap.example.com 389`
+  </Accordion>
+
+  <Accordion title="TLS/SSL errors">
+    If you see TLS or certificate errors:
+    
+    - Try `tls_mode = "none"` to test without encryption
+    - Check if the server certificate is valid
+    - Verify the server supports the TLS mode you're using
+    - For self-signed certificates, you may need to accept the certificate (feature support varies by platform)
+  </Accordion>
+
+  <Accordion title="Bind failed / Invalid credentials">
+    If authentication fails:
+    
+    - Double-check the bind DN format
+    - Verify the password is correct
+    - Try connecting with an LDAP tool like `ldapsearch` to rule out server issues:
+      ```bash
+      ldapsearch -H ldap://ldap.example.com -D "cn=admin,dc=example,dc=com" -W -b "dc=example,dc=com" "(objectClass=*)"
+      ```
+  </Accordion>
+
+  <Accordion title="Server type not detected">
+    If the server type shows as "Unknown":
+    
+    - This doesn't affect functionality
+    - Some servers don't expose vendor or version information
+    - Operations will still work normally
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Browsing" icon="folder-tree" href="/guide/browsing">
+    Learn how to navigate the directory tree
+  </Card>
+  <Card title="Authentication" icon="key" href="/guide/authentication">
+    Configure credential methods and password storage
+  </Card>
+  <Card title="Connection Profiles" icon="bookmark" href="/guide/profiles">
+    Organize and manage saved connections
+  </Card>
+  <Card title="Searching" icon="magnifying-glass" href="/guide/searching">
+    Search the directory with LDAP filters
+  </Card>
+</CardGroup>

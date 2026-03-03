@@ -1,0 +1,518 @@
+---
+title: "Connection Profiles"
+description: "Save, organize, and manage LDAP connection profiles with folder hierarchies"
+---
+
+Connection profiles let you save frequently-used LDAP connections and organize them into folders for easy access.
+
+## Profiles Layout
+
+Press `F1` at any time to switch to the profiles layout.
+
+The profiles layout has two panels:
+
+```
+┌─────────────────────────────────────────────────────┐
+│ Profiles Tree          │ Profile Detail             │
+│                        │                            │
+│ 📁 Production          │ Name: Production LDAP      │
+│   └─ [Prod Main]       │ Host: ldap.example.com     │
+│ 📁 Staging             │ Port: 389                  │
+│   └─ [Staging]         │ TLS Mode: auto             │
+│ 📁 Development         │ Bind DN: cn=admin,dc=...   │
+│   ├─ [Dev Local]       │ Base DN: dc=example,dc=com │
+│   └─ [Dev Docker]      │                            │
+│ [Test Server]          │ [c] Connect  [e] Edit      │
+│                        │                            │
+└─────────────────────────────────────────────────────┘
+```
+
+<Info>
+Profiles are stored in `~/.config/loom-ldapbrowser/config.toml` and loaded automatically on startup.
+</Info>
+
+## Creating Profiles
+
+<Steps>
+  <Step title="Open Profiles Layout">
+    Press `F1` to switch to the profiles view.
+  </Step>
+
+  <Step title="Press n">
+    Press `n` to create a new profile.
+    
+    A connection form appears.
+  </Step>
+
+  <Step title="Fill in Details">
+    Enter connection details:
+    
+    - **Name** - Display name for the profile
+    - **Host** - LDAP server hostname
+    - **Port** - Port number (default: 389)
+    - **Bind DN** - Authentication DN
+    - **Base DN** - Starting point for browsing
+    - **TLS Mode** - Encryption method (press `F2` to cycle)
+    - **Credential Method** - Password storage (press `F3` to cycle)
+    - **Folder** - Organization folder (optional)
+
+    <Tip>
+    Use `Tab` / `Shift+Tab` to move between fields.
+    </Tip>
+  </Step>
+
+  <Step title="Save Profile">
+    Press `F10` or `Ctrl+Enter` to save.
+    
+    The profile appears in the profiles tree.
+  </Step>
+</Steps>
+
+## Editing Profiles
+
+<Steps>
+  <Step title="Select Profile">
+    Navigate to the profile in the profiles tree using `j`/`k` or arrow keys.
+  </Step>
+
+  <Step title="Press e">
+    Press `e` to edit the profile.
+    
+    The connection form appears with current values.
+  </Step>
+
+  <Step title="Modify Fields">
+    Change any fields as needed.
+  </Step>
+
+  <Step title="Save Changes">
+    Press `F10` or `Ctrl+Enter` to save.
+    
+    Press `Esc` to cancel without saving.
+  </Step>
+</Steps>
+
+<Note>
+Changes to profiles are saved to `config.toml` immediately.
+</Note>
+
+## Connecting to Profiles
+
+There are several ways to connect to a saved profile:
+
+### From Profiles Layout
+
+1. Press `F1` to open profiles
+2. Navigate to a profile
+3. Press `c` to connect
+
+The connection opens in a new tab in the browser layout.
+
+### From Connection Dialog
+
+1. Press `F2` to open the connection dialog
+2. Select a profile from the list
+3. Press `c` to connect
+
+### Auto-Connect on Startup
+
+The first profile in your config file connects automatically:
+
+```toml
+[[connections]]
+name = "Default Server"
+host = "ldap.example.com"
+# ... other settings ...
+```
+
+<Tip>
+To disable auto-connect, remove all profiles from the config file or use the `--no-auto-connect` flag (if available).
+</Tip>
+
+## Organizing with Folders
+
+Group related profiles into folders for better organization:
+
+### Creating Folder Structure
+
+Set the `folder` field when creating or editing a profile:
+
+```toml
+[[connections]]
+name = "Production LDAP"
+host = "ldap.prod.example.com"
+folder = "Production"
+
+[[connections]]
+name = "Staging LDAP"
+host = "ldap.staging.example.com"
+folder = "Production/Staging"
+
+[[connections]]
+name = "Dev Local"
+host = "localhost"
+folder = "Development"
+```
+
+This creates:
+
+```
+📁 Production
+  └─ [Production LDAP]
+  └─ 📁 Staging
+      └─ [Staging LDAP]
+📁 Development
+  └─ [Dev Local]
+```
+
+### Nested Folders
+
+Use forward slashes `/` to create nested folder hierarchies:
+
+```toml
+folder = "Customers/ACME Corp/Production"
+```
+
+Results in:
+
+```
+📁 Customers
+  └─ 📁 ACME Corp
+      └─ 📁 Production
+          └─ [Profile Name]
+```
+
+### Folder Descriptions
+
+Add descriptions to folders for documentation:
+
+```toml
+[[folders]]
+path = "Production"
+description = "Production LDAP servers - handle with care"
+
+[[folders]]
+path = "Development"
+description = "Local development and testing servers"
+```
+
+Descriptions appear in the detail panel when a folder is selected.
+
+<Info>
+Folders are created automatically based on profile `folder` fields. You don't need to define them separately unless you want to add descriptions.
+</Info>
+
+## Deleting Profiles
+
+<Warning>
+Deleting a profile removes it from your config file permanently.
+</Warning>
+
+<Steps>
+  <Step title="Select Profile">
+    Navigate to the profile in the profiles tree.
+  </Step>
+
+  <Step title="Press Delete">
+    Press `d` or `Delete`.
+  </Step>
+
+  <Step title="Confirm Deletion">
+    A confirmation dialog appears. Press `y` to confirm or `n` to cancel.
+  </Step>
+</Steps>
+
+The profile is removed from the tree and from `config.toml`.
+
+<Note>
+Deleting a profile does not affect any open connections. Existing tabs remain open until you close them.
+</Note>
+
+## Exporting Profiles
+
+Export profiles to share with others or create backups:
+
+<Steps>
+  <Step title="Open Profiles Layout">
+    Press `F1`.
+  </Step>
+
+  <Step title="Press x">
+    Press `x` to open the export dialog.
+  </Step>
+
+  <Step title="Select Profiles">
+    A list of all profiles appears with checkboxes.
+    
+    - Use `j`/`k` to navigate
+    - Press `Space` to toggle selection
+    - Press `a` to select all
+  </Step>
+
+  <Step title="Enter Filename">
+    Enter the output filename (e.g., `profiles-backup.toml`).
+  </Step>
+
+  <Step title="Export">
+    Press `Enter` to export.
+    
+    Selected profiles are written to the file in TOML format.
+  </Step>
+</Steps>
+
+**Exported file format:**
+
+```toml
+[[connections]]
+name = "Production LDAP"
+host = "ldap.example.com"
+port = 389
+tls_mode = "auto"
+bind_dn = "cn=admin,dc=example,dc=com"
+base_dn = "dc=example,dc=com"
+credential_method = "prompt"
+folder = "Production"
+
+[[connections]]
+name = "Staging"
+# ...
+```
+
+<Note>
+Passwords are never exported. Recipients will need to configure their own credentials.
+</Note>
+
+## Importing Profiles
+
+Import profiles from TOML files:
+
+<Steps>
+  <Step title="Open Profiles Layout">
+    Press `F1`.
+  </Step>
+
+  <Step title="Press i">
+    Press `i` to open the import dialog.
+  </Step>
+
+  <Step title="Enter Filename">
+    Enter the path to the TOML file to import.
+  </Step>
+
+  <Step title="Review Profiles">
+    A list of profiles from the file appears with checkboxes.
+    
+    - Use `Space` to select profiles to import
+    - Press `a` to select all
+  </Step>
+
+  <Step title="Import">
+    Press `Enter` to import selected profiles.
+    
+    Profiles are added to your config and appear in the tree.
+  </Step>
+</Steps>
+
+<Warning>
+If an imported profile has the same name as an existing profile, the import will ask how to handle conflicts (skip, overwrite, or rename).
+</Warning>
+
+## Profile Fields Reference
+
+### Required Fields
+
+| Field | Description | Example |
+|-------|-------------|---------|
+| `name` | Display name | `"Production LDAP"` |
+| `host` | Server hostname | `"ldap.example.com"` |
+
+### Optional Fields
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `port` | `389` | LDAP port number |
+| `tls_mode` | `"auto"` | Encryption: `auto`, `ldaps`, `starttls`, `none` |
+| `bind_dn` | _(none)_ | Authentication DN |
+| `base_dn` | _(none)_ | Starting point for browsing |
+| `credential_method` | `"prompt"` | Password method: `prompt`, `command`, `keychain`, `vault` |
+| `password_command` | _(none)_ | Shell command for `command` method |
+| `page_size` | `500` | Entries per page |
+| `timeout_secs` | `30` | Connection timeout |
+| `relax_rules` | `false` | Relax LDAP protocol rules |
+| `read_only` | `false` | Prevent modifications |
+| `folder` | _(none)_ | Organization folder path |
+| `offline` | `false` | Use offline demo mode |
+
+## Profile Templates
+
+### OpenLDAP Server
+
+```toml
+[[connections]]
+name = "OpenLDAP Production"
+host = "ldap.example.com"
+port = 389
+tls_mode = "starttls"
+bind_dn = "cn=admin,dc=example,dc=com"
+base_dn = "dc=example,dc=com"
+credential_method = "keychain"
+page_size = 500
+```
+
+### Active Directory
+
+```toml
+[[connections]]
+name = "Active Directory"
+host = "ad.example.com"
+port = 389
+tls_mode = "auto"
+bind_dn = "admin@example.com"
+base_dn = "DC=example,DC=com"
+credential_method = "prompt"
+page_size = 1000
+```
+
+### Read-Only Access
+
+```toml
+[[connections]]
+name = "Production (Read-Only)"
+host = "ldap.example.com"
+port = 389
+tls_mode = "ldaps"
+bind_dn = "cn=readonly,dc=example,dc=com"
+base_dn = "dc=example,dc=com"
+credential_method = "command"
+password_command = "pass show ldap/readonly"
+read_only = true
+```
+
+### Local Development
+
+```toml
+[[connections]]
+name = "Local Dev"
+host = "localhost"
+port = 389
+tls_mode = "none"
+bind_dn = "cn=admin,dc=local,dc=dev"
+base_dn = "dc=local,dc=dev"
+credential_method = "prompt"
+folder = "Development"
+```
+
+### Offline Demo
+
+```toml
+[[connections]]
+name = "Demo Mode"
+host = "localhost"
+offline = true
+folder = "Demo"
+```
+
+<Info>
+Offline mode uses an in-memory demo directory. Perfect for testing Loom's features without a real server.
+</Info>
+
+## Configuration File Location
+
+Profiles are stored in:
+
+- **Linux:** `~/.config/loom-ldapbrowser/config.toml`
+- **macOS:** `~/.config/loom-ldapbrowser/config.toml`
+- **Windows:** `%APPDATA%\loom-ldapbrowser\config.toml`
+
+You can edit the file directly with a text editor, or use the profiles interface.
+
+<Warning>
+If you edit `config.toml` manually while Loom is running, restart the application to reload changes.
+</Warning>
+
+## Profiles Navigation Reference
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` / `↓` / `↑` | Navigate tree |
+| `l` / `→` | Expand folder or view profile |
+| `h` / `←` | Collapse folder |
+| `c` | Connect to profile |
+| `e` | Edit profile |
+| `n` | Create new profile |
+| `d` / `Delete` | Delete profile |
+| `x` | Export profiles |
+| `i` | Import profiles |
+| `Space` | Context menu |
+| `Esc` / `F1` | Return to browser layout |
+
+## Tips and Best Practices
+
+<AccordionGroup>
+  <Accordion title="Organize by environment">
+    Create top-level folders for each environment:
+    
+    ```
+    📁 Production
+    📁 Staging  
+    📁 Development
+    📁 Testing
+    ```
+    
+    This makes it easy to find the right server and avoid mistakes.
+  </Accordion>
+
+  <Accordion title="Use descriptive names">
+    Include purpose or location in profile names:
+    
+    ✅ **Good:** "Production LDAP (US-East)", "Dev - Local Docker"
+    
+    ❌ **Bad:** "Server1", "Test"
+  </Accordion>
+
+  <Accordion title="Mark read-only profiles">
+    Add read-only mode to production profiles where you only need to browse:
+    
+    ```toml
+    read_only = true
+    ```
+    
+    Prevents accidental modifications.
+  </Accordion>
+
+  <Accordion title="Use specific base DNs">
+    Set `base_dn` to the most common starting point:
+    
+    For user management:
+    ```toml
+    base_dn = "ou=users,dc=example,dc=com"
+    ```
+    
+    This speeds up browsing and limits scope.
+  </Accordion>
+
+  <Accordion title="Backup your profiles">
+    Regularly export profiles to a backup file:
+    
+    ```bash
+    cp ~/.config/loom-ldapbrowser/config.toml ~/backups/loom-config-$(date +%Y%m%d).toml
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/guide/authentication">
+    Configure credential methods for profiles
+  </Card>
+  <Card title="Connecting" icon="plug" href="/guide/connecting">
+    Learn about connection methods and TLS modes
+  </Card>
+  <Card title="Configuration" icon="gear" href="/reference/configuration">
+    Complete configuration file reference
+  </Card>
+  <Card title="Browsing" icon="folder-tree" href="/guide/browsing">
+    Navigate connected directories
+  </Card>
+</CardGroup>

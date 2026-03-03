@@ -7,7 +7,7 @@ description: 'Understanding the workspace structure, crate organization, and act
 
 Loom LDAP Browser is organized as a Cargo workspace with three crates, each with distinct responsibilities:
 
-```
+```text
 crates/
   loom-ldapbrowser/  Binary crate - CLI parsing and application entry point
   loom-core/         Library - LDAP operations, export/import, schema
@@ -315,7 +315,7 @@ cargo clippy --workspace -- -D warnings
 
 ## Dependency Graph
 
-```
+```text
 loom-ldapbrowser (binary)
     ├── loom-tui (library)
     │   └── loom-core (library)
